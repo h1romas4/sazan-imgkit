@@ -44,3 +44,7 @@ Options:
 ```bash
 $ cargo run --release --bin sazan -- crop-split --crop 2048x2048+0+0 --grid 3x3 test.png -o result.zip
 ```
+
+## License
+
+BSD 3-Clause License
