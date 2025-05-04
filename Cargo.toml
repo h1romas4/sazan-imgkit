@@ -1,0 +1,18 @@
+[workspace]
+resolver = "2"
+members = [
+    "components/sazan", "components/sazan-cli",
+]
+
+[workspace.dependencies]
+xtask = "0.1.0"
+
+[workspace.package]
+version = "0.0.1"
+license = "BSD-3-Clause"
+edition = "2021"
+publish = false
+rust-version = "1.84.1"
+
+[profile.release]
+opt-level = 3
