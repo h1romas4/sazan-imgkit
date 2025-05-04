@@ -1,0 +1,46 @@
+# sazan-imgkit
+
+## Usage
+
+### `sazan crop-grid`
+
+Crop and montage images into a grid.
+
+```bash
+Usage: sazan crop-grid [OPTIONS] --crop <CROP> --grid <GRID> <IMAGES>...
+
+Arguments:
+  <IMAGES>...  Image files (wildcard, e.g. images/*.png)
+
+Options:
+  -o, --output <OUTPUT>  Output file name (default: result.png) [default: result.png]
+  -c, --crop <CROP>      Crop parameter in the format WIDTHxHEIGHT+X+Y (e.g. 1265x1265+1422+366). WIDTH and HEIGHT specify the crop size, X and Y specify the top-left offset in the source image
+  -g, --grid <GRID>      Grid size (e.g. 3x3, 4x2)
+  -h, --help             Print help
+```
+
+```bash
+$ cargo run --release --bin sazan -- crop-grid --crop 2048x2048+684+0 --grid 3x3 tests/souryoku_20250504/pose/*.png -o test.png
+```
+
+### `sazan crop-split`
+
+Crop and split images into tiles and save as a ZIP archive.
+
+```bash
+Usage: sazan crop-split [OPTIONS] --crop <CROP> --grid <GRID> <IMAGES>...
+
+Arguments:
+  <IMAGES>...  Image files (wildcard, e.g. images/*.png)
+
+Options:
+  -o, --output <OUTPUT>  Output ZIP file name (default: result.zip) [default: result.zip]
+  -c, --crop <CROP>      Crop parameter in the format WIDTHxHEIGHT+X+Y (e.g. 256x256+0+0) WIDTH and HEIGHT specify the crop size, X and Y specify the top-left offset in the source image
+  -g, --grid <GRID>      Grid size (e.g. 3x3, 4x2)
+      --prefix <PREFIX>  Filename prefix for tiles in the zip (default: tile) [default: tile]
+  -h, --help             Print help
+```
+
+```bash
+$ cargo run --release --bin sazan -- crop-split --crop 2048x2048+0+0 --grid 3x3 test.png -o result.zip
+```

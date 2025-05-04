@@ -1,4 +1,65 @@
+use std::io::Write;
 use image::{DynamicImage, GenericImageView, RgbaImage, GenericImage};
+
+/// Splits a single image into a grid of tiles and returns a ZIP archive (in memory) containing each tile as a PNG file.
+///
+/// # Arguments
+/// * `image` - Source image to split
+/// * `crop_size` - (width, height) of each tile
+/// * `grid` - (columns, rows) grid size
+/// * `filename_prefix` - Prefix for each PNG file in the zip (e.g. "tile")
+///
+/// # Returns
+/// * `Ok(Vec<u8>)` - ZIP archive as bytes (in memory)
+/// * `Err` - If any error occurs during processing
+/// Crops and splits multiple images into a grid of tiles each, starting from a given offset, and returns a ZIP archive (in memory) containing each tile as a PNG file.
+///
+/// # Arguments
+/// * `images` - Source images to crop and split (each image will be processed independently)
+/// * `crop_size` - (width, height) of each tile
+/// * `offset` - (x, y) start position (top-left) for the grid cropping in each image
+/// * `grid` - (columns, rows) grid size
+/// * `filename_prefix` - Prefix for each PNG file in the zip (e.g. "tile")
+///
+/// # Returns
+/// * `Ok(Vec<u8>)` - ZIP archive as bytes (in memory)
+/// * `Err` - If any error occurs during processing
+pub fn crop_split_image_to_zip(
+    images: &[DynamicImage],
+    crop_size: (u32, u32),
+    offset: (u32, u32),
+    grid: (usize, usize),
+    filename_prefix: &str,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    use zip::write::FileOptions;
+    use zip::ZipWriter;
+    use image::ImageOutputFormat;
+    let (tile_w, tile_h) = crop_size;
+    let (offset_x, offset_y) = offset;
+    let (cols, rows) = grid;
+    let mut buffer = std::io::Cursor::new(Vec::new());
+    let mut zip = ZipWriter::new(&mut buffer);
+    let options = FileOptions::default().compression_method(zip::CompressionMethod::Stored);
+
+    for (img_idx, image) in images.iter().enumerate() {
+        for row in 0..rows {
+            for col in 0..cols {
+                let x = offset_x + col as u32 * tile_w;
+                let y = offset_y + row as u32 * tile_h;
+                let cropped = image.crop_imm(x, y, tile_w, tile_h);
+                let mut png_bytes = std::io::Cursor::new(Vec::new());
+                cropped.write_to(&mut png_bytes, ImageOutputFormat::Png)?;
+                let filename = format!("{}_{:02}_{:02}_{:02}.png", filename_prefix, img_idx, row, col);
+                zip.start_file(filename, options)?;
+                zip.write_all(&png_bytes.into_inner())?;
+            }
+        }
+    }
+    let _ = zip.finish()?;
+    // Explicitly drop zip to release the borrow on buffer
+    drop(zip);
+    Ok(buffer.into_inner())
+}
 
 /// Converts raw RGBA bytes (from browser ImageData) to a DynamicImage.
 ///
@@ -46,7 +107,7 @@ pub fn crop_and_grid_images(
 /// # Returns
 ///
 /// * `Vec<DynamicImage>` - A vector of cropped images.
-pub fn crop_images(
+fn crop_images(
     images: &[DynamicImage],
     crop: (u32, u32, u32, u32),
 ) -> Vec<DynamicImage> {
@@ -71,7 +132,7 @@ pub fn crop_images(
 /// # Returns
 ///
 /// * `DynamicImage` - The combined image arranged in the specified grid.
-pub fn combine_grid(
+fn combine_grid(
     images: Vec<DynamicImage>,
     cols: usize,
     rows: usize,
