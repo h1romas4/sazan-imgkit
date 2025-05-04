@@ -3,50 +3,6 @@ use clap::{Parser, Subcommand};
 use sazan::crop_and_grid_images;
 use std::path::Path;
 
-/// Loads images from file paths, crops them, arranges them in a grid, and saves the result to a file.
-///
-/// # Arguments
-/// * `images` - List of image file paths (will be sorted)
-/// * `output` - Output file path for the combined image
-/// * `crop` - Crop rectangle as (width, height, x, y)
-/// * `grid` - Grid size as (columns, rows)
-///
-/// # Behavior
-/// - Loads each image from the given paths (exits on error)
-/// - Crops each image to the specified rectangle
-/// - Arranges the cropped images in a grid (fills with transparency if not enough images)
-/// - Saves the result to the specified output file (exits on error)
-fn run_crop_grid(images: Vec<String>, output: String, crop: (u32, u32, u32, u32), grid: (usize, usize)) {
-    // Sort image file paths
-    let mut images = images;
-    images.sort();
-
-    // Load images from file paths
-    let mut loaded_images = Vec::with_capacity(images.len());
-    for path in &images {
-        match image::open(Path::new(path)) {
-            Ok(img) => loaded_images.push(img),
-            Err(e) => {
-                eprintln!("Failed to open image '{}': {}", path, e);
-                std::process::exit(1);
-            }
-        }
-    }
-
-    // Extract grid and crop parameters
-    let (cols, rows) = grid;
-
-    // Crop and combine images into a grid
-    let result_img = crop_and_grid_images(&loaded_images, crop, cols, rows);
-
-    // Save the output image file
-    if let Err(e) = result_img.save(&output) {
-        eprintln!("Failed to save output image: {}", e);
-        std::process::exit(1);
-    }
-    println!("Saved output image to {}", output);
-}
-
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
 struct Args {
@@ -113,6 +69,50 @@ fn parse_grid_param_clap(s: &str) -> Result<(usize, usize), String> {
             cap[2].parse().ok()?,
         ))
     }).ok_or_else(|| format!("Invalid grid format: {}", s))
+}
+
+/// Loads images from file paths, crops them, arranges them in a grid, and saves the result to a file.
+///
+/// # Arguments
+/// * `images` - List of image file paths (will be sorted)
+/// * `output` - Output file path for the combined image
+/// * `crop` - Crop rectangle as (width, height, x, y)
+/// * `grid` - Grid size as (columns, rows)
+///
+/// # Behavior
+/// - Loads each image from the given paths (exits on error)
+/// - Crops each image to the specified rectangle
+/// - Arranges the cropped images in a grid (fills with transparency if not enough images)
+/// - Saves the result to the specified output file (exits on error)
+fn run_crop_grid(images: Vec<String>, output: String, crop: (u32, u32, u32, u32), grid: (usize, usize)) {
+    // Sort image file paths
+    let mut images = images;
+    images.sort();
+
+    // Load images from file paths
+    let mut loaded_images = Vec::with_capacity(images.len());
+    for path in &images {
+        match image::open(Path::new(path)) {
+            Ok(img) => loaded_images.push(img),
+            Err(e) => {
+                eprintln!("Failed to open image '{}': {}", path, e);
+                std::process::exit(1);
+            }
+        }
+    }
+
+    // Extract grid and crop parameters
+    let (cols, rows) = grid;
+
+    // Crop and combine images into a grid
+    let result_img = crop_and_grid_images(&loaded_images, crop, cols, rows);
+
+    // Save the output image file
+    if let Err(e) = result_img.save(&output) {
+        eprintln!("Failed to save output image: {}", e);
+        std::process::exit(1);
+    }
+    println!("Saved output image to {}", output);
 }
 
 fn main() {
