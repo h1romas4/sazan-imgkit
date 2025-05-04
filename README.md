@@ -1,5 +1,9 @@
 # sazan-imgkit
 
+sazan-imgkit is a flexible Rust image processing toolkit and CLI for cropping, gridding, splitting, and combining images.
+
+It supports both command-line and WebAssembly (Wasm) use cases, enabling advanced batch image manipulation workflows. Features include robust cropping and tiling, grid montage, in-memory ZIP export, and extensible subcommand-based CLI design. Ideal for automation, web, and creative pipelines.
+
 ## Usage
 
 ### `sazan crop-grid`
