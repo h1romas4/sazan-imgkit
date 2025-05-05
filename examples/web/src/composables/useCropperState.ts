@@ -204,10 +204,14 @@ export class CropperState {
         );
         loadedCount++;
         if (loadedCount === this.images.length) {
-          // Open the generated image in a new tab
-          const dataURL = canvas.toDataURL('image/png');
-          window.open(dataURL, '_blank');
-          this.isGenerating = false;
+          // Create a Blob and open it in a new tab
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const url = URL.createObjectURL(blob);
+              window.open(url, '_blank');
+              this.isGenerating = false;
+            }
+          }, 'image/png');
         }
       };
       img.onerror = () => {
