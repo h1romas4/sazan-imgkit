@@ -43,7 +43,15 @@ const onThumbDragStart = (idx, event) => {
     thumb.classList.add('dragging');
     const img = thumb.querySelector('img');
     if (img) {
-      event.dataTransfer.setDragImage(img, img.width / 2, img.height / 2);
+      // Create a small offscreen canvas to use as drag image (fixed size, doubled)
+      const canvas = document.createElement('canvas');
+      const size = 96;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, size, size);
+      // Show drag image at bottom-right (right-bottom corner of the canvas)
+      event.dataTransfer.setDragImage(canvas, size, size);
     }
   }
 };
