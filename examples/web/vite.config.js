@@ -14,6 +14,7 @@ export default defineConfig({
     target: 'esnext',
     // GitHub Pages
     outDir: '../../docs',
+    emptyOutDir: true,
     chunkSizeWarningLimit: 1500, // KB
   },
   base: './',
