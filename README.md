@@ -12,6 +12,8 @@ It supports both command-line and WebAssembly (Wasm) use cases, enabling advance
 
 ![alt text](assets/images/sazan-imgkit-frontend.png)
 
+Image © KOEI TECMO GAMES CO., LTD. from “Atelier Resleriana”
+
 ### CLI
 
 #### `sazan crop-grid`
