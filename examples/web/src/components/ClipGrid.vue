@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onBeforeUnmount } from 'vue';
+import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
 import { Cropper } from 'vue-advanced-cropper';
 import 'vue-advanced-cropper/dist/style.css';
 import { useCropperState } from '../composables/useCropperState';
@@ -18,6 +18,7 @@ const state = useCropperState();
  */
 onMounted(() => {
   window.addEventListener('resize', refreshCropper);
+  window.addEventListener('paste', onGlobalPaste);
 });
 
 /**
@@ -25,7 +26,63 @@ onMounted(() => {
  */
 onBeforeUnmount(() => {
   window.removeEventListener('resize', refreshCropper);
+  window.removeEventListener('paste', onGlobalPaste);
 });
+
+
+/**
+ * Ref for the ImageDropArea component, used to delegate paste handling when visible.
+ * @type {import('vue').Ref<InstanceType<typeof ImageDropArea>>}
+ */
+const imageDropAreaRef = ref();
+
+/**
+ * Handles global paste event for image files.
+ * If ImageDropArea is visible, delegates to its handlePaste method.
+ * Otherwise, extracts image files from clipboard and registers them.
+ * @param {ClipboardEvent} e
+ */
+const onGlobalPaste = (e) => {
+  if (imageDropAreaRef.value && typeof imageDropAreaRef.value.handlePaste === 'function') {
+    imageDropAreaRef.value.handlePaste(e);
+    return;
+  }
+  // Accept pasted images even if ImageDropArea is hidden
+  if (!e.clipboardData) return;
+  if (e.clipboardData.files && e.clipboardData.files.length > 0) {
+    onImageDropAreaDrop(renameFiles(e.clipboardData.files));
+    e.preventDefault();
+    return;
+  }
+  const items = Array.from(e.clipboardData.items || []);
+  const imageItems = items.filter(item => item.type.startsWith('image/'));
+  if (imageItems.length > 0) {
+    const files = imageItems.map(item => item.getAsFile()).filter(Boolean);
+    if (files.length > 0) {
+      const dt = new DataTransfer();
+      renameFiles(files).forEach(f => dt.items.add(f));
+      onImageDropAreaDrop(dt.files);
+      e.preventDefault();
+    }
+  }
+};
+
+/**
+ * Renames files to the format clip_N.ext (clip_1.png, clip_2.jpg, ...).
+ * @param {FileList|File[]} files - The files to rename.
+ * @returns {FileList} The renamed files as a FileList.
+ */
+const renameFiles = (files) => {
+  const arr = Array.from(files);
+  const dt = new DataTransfer();
+  arr.forEach((file, i) => {
+    const ext = file.name.split('.').pop() || 'png';
+    const newName = `clip_${i + 1}.${ext}`;
+    const renamed = new File([file], newName, { type: file.type });
+    dt.items.add(renamed);
+  });
+  return dt.files;
+};
 
 /**
  * Computed binding for crop left coordinate.
@@ -250,7 +307,7 @@ const onRootDrop = (e) => {
         />
       </template>
       <template v-else>
-        <ImageDropArea @drop="onImageDropAreaDrop" />
+        <ImageDropArea ref="imageDropAreaRef" @drop="onImageDropAreaDrop" />
       </template>
     </div>
     <div class="clipgrid-side">
