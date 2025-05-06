@@ -5,6 +5,8 @@ import { ref } from 'vue';
  * Props for ThumbnailList component.
  * @property {Array<{name: string, url: string, canvas?: OffscreenCanvas}>} images - List of image objects to display as thumbnails.
  * @property {number} activeIndex - Index of the currently active (selected) image.
+ * @property {number} thumbWidth - Width of each thumbnail in px (default: 64)
+ * @property {number} thumbHeight - Height of each thumbnail in px (default: 64)
  */
 const props = defineProps({
   images: {
@@ -15,6 +17,14 @@ const props = defineProps({
     type: Number,
     required: true,
   },
+  thumbWidth: {
+    type: Number,
+    default: 64,
+  },
+  thumbHeight: {
+    type: Number,
+    default: 64,
+  },
 });
 
 /**
@@ -24,7 +34,6 @@ const props = defineProps({
  * @event reorder - Fires when thumbnails are reordered. Payload: new array (Array)
  */
 const emit = defineEmits(['select', 'remove', 'reorder']);
-
 
 /**
  * Index of the thumbnail currently being dragged (for drag-and-drop reordering).
@@ -50,15 +59,16 @@ const onThumbDragStart = (idx, event) => {
   if (thumb) {
     const img = thumb.querySelector('img');
     if (img) {
-      // Create a small offscreen canvas to use as drag image (fixed size, doubled)
+      // Create a small offscreen canvas to use as drag image (use thumbWidth/Height)
       const canvas = document.createElement('canvas');
-      const size = 96;
-      canvas.width = size;
-      canvas.height = size;
+      const sizeW = props.thumbWidth;
+      const sizeH = props.thumbHeight;
+      canvas.width = sizeW;
+      canvas.height = sizeH;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, size, size);
+      ctx.drawImage(img, 0, 0, sizeW, sizeH);
       // Show drag image at bottom-right (right-bottom corner of the canvas)
-      event.dataTransfer.setDragImage(canvas, size, size);
+      event.dataTransfer.setDragImage(canvas, sizeW, sizeH);
     }
   }
 };
@@ -113,6 +123,7 @@ const onThumbRemove = (idx) => {
       :key="img.url"
       class="clipgrid-thumb"
       :class="{ active: idx === activeIndex, dragging: idx === dragSrcIdx, 'drag-over': idx === dragOverIdx }"
+      :style="{ width: props.thumbWidth + 'px', height: props.thumbHeight + 'px' }"
       draggable="true"
       @dragstart="onThumbDragStart(idx, $event)"
       @dragover.prevent="onThumbDragOver(idx)"
@@ -121,7 +132,12 @@ const onThumbRemove = (idx) => {
       <slot name="thumb-remove" :img="img" :idx="idx" :remove="onThumbRemove">
         <span class="clipgrid-thumbclose" @click.stop="onThumbRemove(idx)">×</span>
       </slot>
-      <img :src="img.url" :alt="img.name" @click="onThumbClick(idx)" />
+      <img
+        :src="img.url"
+        :alt="img.name"
+        @click="onThumbClick(idx)"
+        :style="{ height: (props.thumbHeight - 16) + 'px' }"
+      />
       <slot name="thumb-name" :img="img" :idx="idx">
         <div class="clipgrid-thumbname">{{ img.name }}</div>
       </slot>
@@ -141,8 +157,7 @@ const onThumbRemove = (idx) => {
 .clipgrid-thumb {
   border: 2px solid #444;
   border-radius: 6px;
-  width: 64px;
-  height: 64px;
+  /* width/height are now set via style binding */
   overflow: hidden;
   cursor: pointer;
   display: flex;
