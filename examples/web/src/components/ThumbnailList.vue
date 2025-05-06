@@ -25,11 +25,18 @@ const props = defineProps({
  */
 const emit = defineEmits(['select', 'remove', 'reorder']);
 
+
 /**
  * Index of the thumbnail currently being dragged (for drag-and-drop reordering).
  * @type {import('vue').Ref<number|null>}
  */
-let dragSrcIdx = ref(null);
+const dragSrcIdx = ref(null);
+
+/**
+ * Index of the thumbnail currently being dragged over.
+ * @type {import('vue').Ref<number|null>}
+ */
+const dragOverIdx = ref(null);
 
 /**
  * Handles drag start for a thumbnail.
@@ -38,9 +45,9 @@ let dragSrcIdx = ref(null);
  */
 const onThumbDragStart = (idx, event) => {
   dragSrcIdx.value = idx;
+  dragOverIdx.value = null;
   const thumb = event.target.closest('.clipgrid-thumb');
   if (thumb) {
-    thumb.classList.add('dragging');
     const img = thumb.querySelector('img');
     if (img) {
       // Create a small offscreen canvas to use as drag image (fixed size, doubled)
@@ -61,14 +68,7 @@ const onThumbDragStart = (idx, event) => {
  * @param {number} idx
  */
 const onThumbDragOver = (idx) => {
-  const thumbs = document.querySelectorAll('.clipgrid-thumb');
-  thumbs.forEach((thumb, i) => {
-    if (i === idx) {
-      thumb.classList.add('drag-over');
-    } else {
-      thumb.classList.remove('drag-over');
-    }
-  });
+  dragOverIdx.value = idx;
 };
 
 /**
@@ -76,16 +76,17 @@ const onThumbDragOver = (idx) => {
  * @param {number} idx
  */
 const onThumbDrop = (idx) => {
-  const thumbs = document.querySelectorAll('.clipgrid-thumb');
-  thumbs.forEach(thumb => {
-    thumb.classList.remove('dragging', 'drag-over');
-  });
-  if (dragSrcIdx.value === null || dragSrcIdx.value === idx) return;
+  if (dragSrcIdx.value === null || dragSrcIdx.value === idx) {
+    dragSrcIdx.value = null;
+    dragOverIdx.value = null;
+    return;
+  }
   const arr = props.images.slice();
   const moved = arr.splice(dragSrcIdx.value, 1)[0];
   arr.splice(idx, 0, moved);
   emit('reorder', arr);
   dragSrcIdx.value = null;
+  dragOverIdx.value = null;
 };
 
 /**
@@ -111,7 +112,7 @@ const onThumbRemove = (idx) => {
       v-for="(img, idx) in images"
       :key="img.url"
       class="clipgrid-thumb"
-      :class="{ active: idx === activeIndex }"
+      :class="{ active: idx === activeIndex, dragging: idx === dragSrcIdx, 'drag-over': idx === dragOverIdx }"
       draggable="true"
       @dragstart="onThumbDragStart(idx, $event)"
       @dragover.prevent="onThumbDragOver(idx)"
