@@ -325,8 +325,7 @@ pre {
   border-radius: 4px;
   text-align: left;
 }
-</style>
-<style scoped>
+
 .clipgrid-generate-btn:disabled,
 .clipgrid-generate-btn.is-disabled {
   background: #333 !important;
@@ -335,8 +334,7 @@ pre {
   opacity: 1 !important;
   cursor: not-allowed !important;
 }
-</style>
-<style scoped>
+
 .clipgrid-thumbnails {
   display: flex;
   flex-direction: row;
@@ -419,8 +417,7 @@ pre {
   background: rgba(66, 184, 131, 0.2);
   transition: background 0.2s ease, border-color 0.2s ease;
 }
-</style>
-<style scoped>
+
 .clipgrid-droparea {
   width: 480px;
   height: 360px;
