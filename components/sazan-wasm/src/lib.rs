@@ -38,7 +38,7 @@ pub fn crop_and_grid_images(
     grid_cols: u32,
     grid_rows: u32,
 ) -> Vec<u8> {
-    // RGBA画像なので1ピクセル4バイト
+    // Since the image is RGBA, each pixel is 4 bytes
     let bytes_per_pixel = 4; // RGBA
     let single_len = (image_width * image_height * bytes_per_pixel) as usize;
     let mut images = Vec::with_capacity(num_images as usize);
