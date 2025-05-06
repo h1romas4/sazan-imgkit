@@ -1,32 +1,17 @@
 <script setup>
-import { computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import { computed, onMounted, onBeforeUnmount } from 'vue';
 import { Cropper } from 'vue-advanced-cropper';
-import { ElMessage } from 'element-plus';
 import 'vue-advanced-cropper/dist/style.css';
 import { useCropperState } from '../composables/useCropperState';
 import ThumbnailList from './ThumbnailList.vue';
 import ImageDropArea from './ImageDropArea.vue';
+import MessageNotify from './MessageNotify.vue';
 
 /**
  * Provides reactive state and logic for image cropping and grid generation UI.
  * All state mutation is performed via composable methods.
  */
 const state = useCropperState();
-
-/**
- * Watch for errorMessage in state and show notification if set.
- * Uses Element Plus ElMessage for error display.
- *
- * @see https://element-plus.org/en-US/component/message.html
- */
-watch(
-  () => state.errorMessage,
-  (msg) => {
-    if (msg) {
-      ElMessage.error(msg);
-    }
-  }
-);
 
 /**
  * Vue lifecycle hook: Registers window resize event to refresh cropper UI.
@@ -226,6 +211,10 @@ const onRootDrop = (e) => {
 </script>
 <template>
   <div class="clipgrid-root" @dragover.prevent="onRootDragOver" @drop.prevent="onRootDrop">
+    <!-- Notification for error messages -->
+    <MessageNotify :message="state.errorMessage" type="error" />
+    <!-- Notification for info messages -->
+    <MessageNotify :message="state.infoMessage" type="info" />
     <div class="clipgrid-main">
       <template v-if="state.image">
         <div class="clipgrid-cropper-wrap">

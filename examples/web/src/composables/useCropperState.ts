@@ -14,6 +14,14 @@ class CropperState {
   errorMessage: string | null = null;
 
   /**
+   * The current info message, if any. This should be watched by the UI layer
+   * and displayed using any notification method (e.g., toast, dialog).
+   * Set to null when there is no info.
+   * @type {string|null}
+   */
+  infoMessage: string | null = null;
+
+  /**
    * Current aspect ratio mode for cropping ('square' or 'free').
    * Controls the aspect ratio of the cropper UI.
    * @type {'square' | 'free'}
@@ -307,6 +315,7 @@ class CropperState {
       return;
     }
     this.errorMessage = null;
+    this.infoMessage = 'Generating image...';
     this.isGenerating = true;
 
     // Collect RGBA data for all images, resizing to the largest image size
@@ -380,17 +389,21 @@ class CropperState {
           window.open(url, '_blank');
           this.isGenerating = false;
           this.errorMessage = null;
+          this.infoMessage = null;
         } else {
           this.errorMessage = 'Failed to create image Blob.';
           this.isGenerating = false;
+          this.infoMessage = null;
         }
       }).catch(e => {
         this.errorMessage = 'An error occurred while creating the image Blob.';
         this.isGenerating = false;
+        this.infoMessage = null;
       });
     } catch (e) {
       this.errorMessage = 'Failed to generate grid image using Wasm.';
       this.isGenerating = false;
+      this.infoMessage = null;
     }
   }
 }
