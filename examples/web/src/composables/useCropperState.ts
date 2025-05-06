@@ -6,6 +6,14 @@ import { cropAndGridImages } from '../utils/sazan-helper';
  */
 class CropperState {
   /**
+   * The current error message, if any. This should be watched by the UI layer
+   * and displayed using any notification method (e.g., toast, dialog).
+   * Set to null when there is no error.
+   * @type {string|null}
+   */
+  errorMessage: string | null = null;
+
+  /**
    * Current aspect ratio mode for cropping ('square' or 'free').
    * Controls the aspect ratio of the cropper UI.
    * @type {'square' | 'free'}
@@ -295,9 +303,10 @@ class CropperState {
   generateImage() {
     // Return early if there are no images
     if (this.images.length === 0) {
-      console.error('No images available to generate the grid.');
+      this.errorMessage = 'No images available. Cannot generate grid image.';
       return;
     }
+    this.errorMessage = null;
     this.isGenerating = true;
 
     // Collect RGBA data for all images, resizing to the largest image size
@@ -312,7 +321,7 @@ class CropperState {
     const rgbaImages: Uint8ClampedArray[] = [];
     for (const imgObj of this.images) {
       if (!imgObj.canvas) {
-        console.error('Image does not have an associated canvas:', imgObj.name);
+        this.errorMessage = `Failed to load image: ${imgObj.name}`;
         this.isGenerating = false;
         return;
       }
@@ -321,7 +330,7 @@ class CropperState {
       const dstCanvas = new OffscreenCanvas(maxWidth, maxHeight);
       const dstCtx = dstCanvas.getContext('2d');
       if (!dstCtx) {
-        console.error('Failed to get canvas context for resizing:', imgObj.name);
+        this.errorMessage = `Failed to create resize canvas for image: ${imgObj.name}`;
         this.isGenerating = false;
         return;
       }
@@ -354,7 +363,7 @@ class CropperState {
       const outCanvas = new OffscreenCanvas(gridCols * cellWidth, gridRows * cellHeight);
       const outCtx = outCanvas.getContext('2d');
       if (!outCtx) {
-        console.error('Failed to get output canvas context.');
+        this.errorMessage = 'Failed to create output canvas.';
         this.isGenerating = false;
         return;
       }
@@ -370,13 +379,17 @@ class CropperState {
           const url = URL.createObjectURL(blob);
           window.open(url, '_blank');
           this.isGenerating = false;
+          this.errorMessage = null;
+        } else {
+          this.errorMessage = 'Failed to create image Blob.';
+          this.isGenerating = false;
         }
       }).catch(e => {
-        console.error('Failed to convert OffscreenCanvas to Blob:', e);
+        this.errorMessage = 'An error occurred while creating the image Blob.';
         this.isGenerating = false;
       });
     } catch (e) {
-      console.error('Failed to generate grid image with wasm:', e);
+      this.errorMessage = 'Failed to generate grid image using Wasm.';
       this.isGenerating = false;
     }
   }
