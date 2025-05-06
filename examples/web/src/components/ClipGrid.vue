@@ -1,8 +1,8 @@
 <script setup>
-import { watch, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
-import { Cropper } from 'vue-advanced-cropper'
-import 'vue-advanced-cropper/dist/style.css'
-import { useCropperState } from '../composables/useCropperState'
+import { watch, computed, nextTick, onMounted, onBeforeUnmount } from 'vue';
+import { Cropper } from 'vue-advanced-cropper';
+import 'vue-advanced-cropper/dist/style.css';
+import { useCropperState } from '../composables/useCropperState';
 
 const state = useCropperState();
 
