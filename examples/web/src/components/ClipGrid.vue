@@ -182,7 +182,7 @@ const onGenerateImage = () => {
   state.isGenerating = true;
   setTimeout(() => {
     state.generateImage();
-  }, 200);
+  }, 10);
 };
 
 /**
