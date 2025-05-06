@@ -5,8 +5,8 @@ import { ref } from 'vue';
  * Props for ThumbnailList component.
  * @property {Array<{name: string, url: string, canvas?: OffscreenCanvas}>} images - List of image objects to display as thumbnails.
  * @property {number} activeIndex - Index of the currently active (selected) image.
- * @property {number} thumbWidth - Width of each thumbnail in px (default: 64)
- * @property {number} thumbHeight - Height of each thumbnail in px (default: 64)
+ * @property {number} thumbWidth - Width of each thumbnail in px. Default: 64
+ * @property {number} thumbHeight - Height of each thumbnail in px. Default: 64
  */
 const props = defineProps({
   images: {
