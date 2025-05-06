@@ -1,23 +1,23 @@
-import { reactive } from 'vue'
+import { reactive } from 'vue';
 
 export class CropperState {
-  aspectRatioMode = 'square' // 'square' or 'free'
-  cropperRef: any = null
-  coordinates = { left: 0, top: 0, width: 100, height: 100 }
-  cropperCurrent = { left: 0, top: 0, width: 100, height: 100 }
-  gridCols = 3
-  gridRows = 3
+  aspectRatioMode = 'square'; // 'square' or 'free'
+  cropperRef: any = null;
+  coordinates = { left: 0, top: 0, width: 100, height: 100 };
+  cropperCurrent = { left: 0, top: 0, width: 100, height: 100 };
+  gridCols = 3;
+  gridRows = 3;
 
   images: { name: string; url: string; canvas?: OffscreenCanvas }[] = [];
-  activeImageIndex: number = -1
-  lastCoordinates: { left: number, top: number, width: number, height: number } | null = null
+  activeImageIndex: number = -1;
+  lastCoordinates: { left: number, top: number, width: number, height: number } | null = null;
   image: string = '';
-  imageWidth = 500
-  imageHeight = 500
+  imageWidth = 500;
+  imageHeight = 500;
   isGenerating = false;
 
   get aspectRatioValue() {
-    return this.aspectRatioMode === 'square' ? 1 : undefined
+    return this.aspectRatioMode === 'square' ? 1 : undefined;
   }
 
   updateImageSize(src: string, keepCoordinates: boolean = false) {
@@ -56,9 +56,9 @@ export class CropperState {
         top: Math.round(coords.top),
         width: Math.round(coords.width),
         height: Math.round(coords.height),
-      }
-      this.coordinates = rounded
-      this.cropperCurrent = { ...rounded }
+      };
+      this.coordinates = rounded;
+      this.cropperCurrent = { ...rounded };
     }
   }
 
@@ -69,8 +69,8 @@ export class CropperState {
         top: this.coordinates.top,
         width: this.coordinates.width,
         height: this.coordinates.height,
-      })
-      this.cropperCurrent = { ...this.coordinates }
+      });
+      this.cropperCurrent = { ...this.coordinates };
     }
   }
 
@@ -227,5 +227,5 @@ export class CropperState {
 }
 
 export function useCropperState() {
-  return reactive(new CropperState())
+  return reactive(new CropperState());
 }

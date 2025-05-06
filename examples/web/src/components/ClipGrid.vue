@@ -4,7 +4,7 @@ import { Cropper } from 'vue-advanced-cropper'
 import 'vue-advanced-cropper/dist/style.css'
 import { useCropperState } from '../composables/useCropperState'
 
-const state = useCropperState()
+const state = useCropperState();
 
 watch(() => state.aspectRatioMode, (newMode, oldMode) => {
   if (oldMode === 'free' && newMode === 'square') {
@@ -25,13 +25,13 @@ onBeforeUnmount(() => {
 
 const left = computed({
   get: () => state.coordinates.left,
-  set: v => { state.coordinates = { ...state.coordinates, left: v } }
-})
+  set: v => { state.coordinates = { ...state.coordinates, left: v }; }
+});
 
 const top = computed({
   get: () => state.coordinates.top,
-  set: v => { state.coordinates = { ...state.coordinates, top: v } }
-})
+  set: v => { state.coordinates = { ...state.coordinates, top: v }; }
+});
 
 const widthMax = computed(() => state.imageWidth);
 const heightMax = computed(() => state.imageHeight);
@@ -46,7 +46,7 @@ const width = computed({
       state.coordinates = { ...state.coordinates, width: v };
     }
   }
-})
+});
 
 const height = computed({
   get: () => state.coordinates.height,
@@ -58,17 +58,17 @@ const height = computed({
       state.coordinates = { ...state.coordinates, height: v };
     }
   }
-})
+});
 
 const refreshCropper = () => {
   if (state.cropperRef && typeof state.cropperRef.refresh === 'function') {
     state.cropperRef.refresh();
   }
-}
+};
 
 const onCropperChange = (e) => {
-  state.onCropperChange(e)
-}
+  state.onCropperChange(e);
+};
 
 const onCropperReady = () => {
   if (state.cropperRef && typeof state.cropperRef.setCoordinates === 'function') {
@@ -80,20 +80,20 @@ const onCropperReady = () => {
       ...state.coordinates,
     });
   }
-}
+};
 
 const applyCoordinatesToCropper = () => {
-  state.applyCoordinatesToCropper()
-}
+  state.applyCoordinatesToCropper();
+};
 
 const isDirty = computed(() => {
-  const a = state.coordinates, b = state.cropperCurrent
-  return a.left !== b.left || a.top !== b.top || a.width !== b.width || a.height !== b.height
-})
+  const a = state.coordinates, b = state.cropperCurrent;
+  return a.left !== b.left || a.top !== b.top || a.width !== b.width || a.height !== b.height;
+});
 
 const onImageDrop = (e) => {
-  state.onImageDrop(e)
-}
+  state.onImageDrop(e);
+};
 
 let dragSrcIdx = null;
 
@@ -107,7 +107,7 @@ const onThumbDragStart = (idx, event) => {
       event.dataTransfer.setDragImage(img, img.width / 2, img.height / 2);
     }
   }
-}
+};
 
 const onThumbDragOver = (idx) => {
   const thumbs = document.querySelectorAll('.clipgrid-thumb');
@@ -118,7 +118,7 @@ const onThumbDragOver = (idx) => {
       thumb.classList.remove('drag-over');
     }
   });
-}
+};
 
 const onThumbDrop = (idx) => {
   const thumbs = document.querySelectorAll('.clipgrid-thumb');
@@ -140,14 +140,14 @@ const onThumbDrop = (idx) => {
   }
 
   dragSrcIdx = null;
-}
+};
 
 const onGenerateImage = () => {
   state.isGenerating = true;
   setTimeout(() => {
     state.generateImage();
   }, 200);
-}
+};
 </script>
 <template>
   <div class="clipgrid-root" @dragover.prevent @drop.prevent="onImageDrop">

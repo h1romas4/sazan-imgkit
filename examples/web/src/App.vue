@@ -1,8 +1,8 @@
 
 <script setup>
-import { ref } from 'vue'
-import ClipGrid from './components/ClipGrid.vue'
-const activeTab = ref('clipgrid')
+import { ref } from 'vue';
+import ClipGrid from './components/ClipGrid.vue';
+const activeTab = ref('clipgrid');
 </script>
 
 <template>
