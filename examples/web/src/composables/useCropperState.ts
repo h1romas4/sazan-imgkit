@@ -3,20 +3,86 @@ import { reactive } from 'vue';
 /**
  * State and logic for image cropping and grid generation.
  */
-export class CropperState {
+class CropperState {
+  /**
+   * Current aspect ratio mode for cropping ('square' or 'free').
+   * Controls the aspect ratio of the cropper UI.
+   * @type {'square' | 'free'}
+   */
   aspectRatioMode: 'square' | 'free' = 'square';
+
+  /**
+   * Reference to the Cropper component instance.
+   * Used for programmatic control of the cropper UI.
+   * @type {any}
+   */
   cropperRef: any = null;
+
+  /**
+   * Current crop coordinates (left, top, width, height).
+   * Bound to the cropper UI and updated by user interaction.
+   * @type {{ left: number, top: number, width: number, height: number }}
+   */
   coordinates = { left: 0, top: 0, width: 100, height: 100 };
+
+  /**
+   * The cropper's last known coordinates (used for dirty checking).
+   * @type {{ left: number, top: number, width: number, height: number }}
+   */
   cropperCurrent = { left: 0, top: 0, width: 100, height: 100 };
+
+  /**
+   * Number of columns in the output grid image.
+   * @type {number}
+   */
   gridCols = 3;
+
+  /**
+   * Number of rows in the output grid image.
+   * @type {number}
+   */
   gridRows = 3;
 
+  /**
+   * List of uploaded images with metadata and optional OffscreenCanvas.
+   * @type {Array<{ name: string; url: string; canvas?: OffscreenCanvas }>}
+   */
   images: { name: string; url: string; canvas?: OffscreenCanvas }[] = [];
+
+  /**
+   * Index of the currently active image in the images array. -1 if no image is active.
+   * @type {number}
+   */
   activeImageIndex: number = -1;
+
+  /**
+   * Last used crop coordinates (for restoring when switching images). Null if not available.
+   * @type {{ left: number, top: number, width: number, height: number } | null}
+   */
   lastCoordinates: { left: number, top: number, width: number, height: number } | null = null;
+
+  /**
+   * Data URL of the currently active image.
+   * @type {string}
+   */
   image: string = '';
+
+  /**
+   * Width of the currently active image (in pixels).
+   * @type {number}
+   */
   imageWidth = 500;
+
+  /**
+   * Height of the currently active image (in pixels).
+   * @type {number}
+   */
   imageHeight = 500;
+
+  /**
+   * True if the output image is currently being generated.
+   * @type {boolean}
+   */
   isGenerating = false;
 
   /**
