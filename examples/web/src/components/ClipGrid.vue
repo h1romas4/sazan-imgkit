@@ -6,15 +6,6 @@ import { useCropperState } from '../composables/useCropperState';
 
 const state = useCropperState();
 
-watch(() => state.aspectRatioMode, (newMode, oldMode) => {
-  if (oldMode === 'free' && newMode === 'square') {
-    const minSide = Math.min(state.imageWidth, state.imageHeight);
-    let newValue = Math.min(state.coordinates.width, state.coordinates.height, minSide);
-    state.coordinates = { ...state.coordinates, width: newValue, height: newValue };
-    nextTick(() => state.applyCoordinatesToCropper());
-  }
-});
-
 onMounted(() => {
   window.addEventListener('resize', refreshCropper);
 });
@@ -25,12 +16,12 @@ onBeforeUnmount(() => {
 
 const left = computed({
   get: () => state.coordinates.left,
-  set: v => { state.coordinates = { ...state.coordinates, left: v }; }
+  set: v => { state.setCoordinates({ left: v }); }
 });
 
 const top = computed({
   get: () => state.coordinates.top,
-  set: v => { state.coordinates = { ...state.coordinates, top: v }; }
+  set: v => { state.setCoordinates({ top: v }); }
 });
 
 const widthMax = computed(() => state.imageWidth);
@@ -40,10 +31,9 @@ const width = computed({
   get: () => state.coordinates.width,
   set: v => {
     if (state.aspectRatioMode === 'square') {
-      state.coordinates = { ...state.coordinates, width: v, height: v };
-      nextTick(() => state.applyCoordinatesToCropper());
+      state.setCoordinates({ width: v, height: v });
     } else {
-      state.coordinates = { ...state.coordinates, width: v };
+      state.setCoordinates({ width: v });
     }
   }
 });
@@ -52,10 +42,9 @@ const height = computed({
   get: () => state.coordinates.height,
   set: v => {
     if (state.aspectRatioMode === 'square') {
-      state.coordinates = { ...state.coordinates, width: v, height: v };
-      nextTick(() => state.applyCoordinatesToCropper());
+      state.setCoordinates({ width: v, height: v });
     } else {
-      state.coordinates = { ...state.coordinates, height: v };
+      state.setCoordinates({ height: v });
     }
   }
 });
@@ -207,7 +196,7 @@ const onGenerateImage = () => {
       <div v-if="state.coordinates">
         <el-form label-position="top" size="small">
           <el-form-item label="Aspect ratio">
-            <el-radio-group v-model="state.aspectRatioMode">
+            <el-radio-group :model-value="state.aspectRatioMode" @change="v => state.setAspectRatioMode(v)">
               <el-radio :value="'square'">1:1 Fixed</el-radio>
               <el-radio :value="'free'">Free</el-radio>
             </el-radio-group>

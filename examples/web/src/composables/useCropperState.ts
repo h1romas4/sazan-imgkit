@@ -3,8 +3,9 @@ import { reactive } from 'vue';
 /**
  * State and logic for image cropping and grid generation.
  */
+
 export class CropperState {
-  aspectRatioMode = 'square'; // 'square' or 'free'
+  aspectRatioMode: 'square' | 'free' = 'square';
   cropperRef: any = null;
   coordinates = { left: 0, top: 0, width: 100, height: 100 };
   cropperCurrent = { left: 0, top: 0, width: 100, height: 100 };
@@ -18,6 +19,38 @@ export class CropperState {
   imageWidth = 500;
   imageHeight = 500;
   isGenerating = false;
+
+  /**
+   * Sets crop coordinates and applies to cropper if needed.
+   * @param coords Coordinates to update (partial)
+   * @param applyToCropper Whether to apply to cropper UI (default: true)
+   */
+  setCoordinates(
+    coords: Partial<{ left: number; top: number; width: number; height: number }>,
+    applyToCropper = true
+  ) {
+    this.coordinates = { ...this.coordinates, ...coords };
+    if (applyToCropper) {
+      this.applyCoordinatesToCropper();
+    }
+  }
+
+  /**
+   * Sets the aspect ratio mode and adjusts coordinates if needed.
+   * @param mode 'square' or 'free'
+   */
+  setAspectRatioMode(mode: 'square' | 'free') {
+    const oldMode = this.aspectRatioMode;
+    this.aspectRatioMode = mode;
+    if (oldMode === 'free' && mode === 'square') {
+      const minSide = Math.min(this.imageWidth, this.imageHeight);
+      let newValue = Math.min(this.coordinates.width, this.coordinates.height, minSide);
+      this.setCoordinates({ width: newValue, height: newValue });
+    } else if (oldMode === 'square' && mode === 'free') {
+      // Ensure cropper UI is synced when switching to free mode
+      this.applyCoordinatesToCropper();
+    }
+  }
 
   /**
    * Returns the numeric aspect ratio value for the cropper.
