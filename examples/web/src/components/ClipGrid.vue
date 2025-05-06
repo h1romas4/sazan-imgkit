@@ -29,7 +29,6 @@ onBeforeUnmount(() => {
   window.removeEventListener('paste', onGlobalPaste);
 });
 
-
 /**
  * Ref for the ImageDropArea component, used to delegate paste handling when visible.
  * @type {import('vue').Ref<InstanceType<typeof ImageDropArea>>}
