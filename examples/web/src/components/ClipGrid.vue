@@ -108,9 +108,34 @@ const onCropperReady = () => {
 
 /**
  * Applies the current coordinates to the cropper UI.
+ * @param {any} _ (unused event argument for compatibility with @change)
  */
-const applyCoordinatesToCropper = () => {
+const applyCoordinatesToCropper = (_ = undefined) => {
   state.applyCoordinatesToCropper();
+};
+
+/**
+ * Handles aspect ratio mode change from the UI.
+ * @param {'square'|'free'} v
+ */
+const onAspectRatioChange = v => {
+  state.setAspectRatioMode(v);
+};
+
+/**
+ * Handles setting the active image from the UI.
+ * @param {number} idx
+ */
+const onSetActiveImage = idx => {
+  state.setActiveImage(idx);
+};
+
+/**
+ * Handles removing an image from the UI.
+ * @param {number} idx
+ */
+const onRemoveImage = idx => {
+  state.removeImage(idx);
 };
 
 /**
@@ -237,8 +262,8 @@ const onGenerateImage = () => {
             @dragover.prevent="onThumbDragOver(idx)"
             @drop.prevent="onThumbDrop(idx)"
           >
-            <span class="clipgrid-thumbclose" @click.stop="state.removeImage(idx)">×</span>
-            <img :src="img.url" :alt="img.name" @click="state.setActiveImage(idx)" />
+            <span class="clipgrid-thumbclose" @click.stop="onRemoveImage(idx)">×</span>
+            <img :src="img.url" :alt="img.name" @click="onSetActiveImage(idx)" />
             <div class="clipgrid-thumbname">{{ img.name }}</div>
           </div>
         </div>
@@ -257,26 +282,26 @@ const onGenerateImage = () => {
       <div v-if="state.coordinates">
         <el-form label-position="top" size="small">
           <el-form-item label="Aspect ratio">
-            <el-radio-group :model-value="state.aspectRatioMode" @change="v => state.setAspectRatioMode(v)">
+            <el-radio-group :model-value="state.aspectRatioMode" @change="onAspectRatioChange">
               <el-radio :value="'square'">1:1 Fixed</el-radio>
               <el-radio :value="'free'">Free</el-radio>
             </el-radio-group>
           </el-form-item>
           <el-form-item label="Left">
-            <el-input-number v-model="left" :min="0" :max="state.imageWidth" size="small" style="width: 100%;" @change="applyCoordinatesToCropper" />
-            <el-slider v-model="left" :min="0" :max="state.imageWidth" style="width: 100%; margin-top: 4px;" tabindex="-1" @change="applyCoordinatesToCropper" />
+            <el-input-number v-model="left" :min="0" :max="state.imageWidth" size="small" style="width: 100%;" @change="v => applyCoordinatesToCropper(v)" />
+            <el-slider v-model="left" :min="0" :max="state.imageWidth" style="width: 100%; margin-top: 4px;" tabindex="-1" @change="v => applyCoordinatesToCropper(v)" />
           </el-form-item>
           <el-form-item label="Top">
-            <el-input-number v-model="top" :min="0" :max="state.imageHeight" size="small" style="width: 100%;" @change="applyCoordinatesToCropper" />
-            <el-slider v-model="top" :min="0" :max="state.imageHeight" style="width: 100%; margin-top: 4px;" tabindex="-1" @change="applyCoordinatesToCropper" />
+            <el-input-number v-model="top" :min="0" :max="state.imageHeight" size="small" style="width: 100%;" @change="v => applyCoordinatesToCropper(v)" />
+            <el-slider v-model="top" :min="0" :max="state.imageHeight" style="width: 100%; margin-top: 4px;" tabindex="-1" @change="v => applyCoordinatesToCropper(v)" />
           </el-form-item>
           <el-form-item label="Width">
-            <el-input-number v-model="width" :min="1" :max="widthMax" size="small" style="width: 100%;" @change="applyCoordinatesToCropper" />
-            <el-slider v-model="width" :min="1" :max="widthMax" style="width: 100%; margin-top: 4px;" tabindex="-1" @change="applyCoordinatesToCropper" />
+            <el-input-number v-model="width" :min="1" :max="widthMax" size="small" style="width: 100%;" @change="v => applyCoordinatesToCropper(v)" />
+            <el-slider v-model="width" :min="1" :max="widthMax" style="width: 100%; margin-top: 4px;" tabindex="-1" @change="v => applyCoordinatesToCropper(v)" />
           </el-form-item>
           <el-form-item label="Height">
-            <el-input-number v-model="height" :min="1" :max="heightMax" size="small" style="width: 100%;" @change="applyCoordinatesToCropper" />
-            <el-slider v-model="height" :min="1" :max="heightMax" style="width: 100%; margin-top: 4px;" tabindex="-1" @change="applyCoordinatesToCropper" />
+            <el-input-number v-model="height" :min="1" :max="heightMax" size="small" style="width: 100%;" @change="v => applyCoordinatesToCropper(v)" />
+            <el-slider v-model="height" :min="1" :max="heightMax" style="width: 100%; margin-top: 4px;" tabindex="-1" @change="v => applyCoordinatesToCropper(v)" />
           </el-form-item>
           <el-form-item label="Output grid">
             <el-input-number v-model="state.gridCols" :min="1" :max="99" size="small" style="width: 78px;" />
