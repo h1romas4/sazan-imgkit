@@ -6,7 +6,7 @@ It supports both command-line and WebAssembly (Wasm) use cases, enabling advance
 
 ## Usage
 
-### Web Frountend
+### Web Frontend
 
 🔗 [https://h1romas4.github.io/sazan-imgkit/](https://h1romas4.github.io/sazan-imgkit/)
 
