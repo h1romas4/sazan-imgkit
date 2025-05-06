@@ -4,6 +4,7 @@ import { Cropper } from 'vue-advanced-cropper';
 import 'vue-advanced-cropper/dist/style.css';
 import { useCropperState } from '../composables/useCropperState';
 import ThumbnailList from './ThumbnailList.vue';
+import ImageDropArea from './ImageDropArea.vue';
 
 /**
  * Provides reactive state and logic for image cropping and grid generation UI.
@@ -148,11 +149,12 @@ const isDirty = computed(() => {
 });
 
 /**
- * Handles image file drop event and loads images into state.
- * @param {DragEvent} e
+ * Handles image file drop event from ImageDropArea and loads images into state.
+ * @param {FileList} files
  */
-const onImageDrop = (e) => {
-  state.onImageDrop(e);
+const onImageDropAreaDrop = (files) => {
+  const dt = { files };
+  state.onImageDrop({ dataTransfer: dt, preventDefault: () => {} });
 };
 
 /**
@@ -181,9 +183,33 @@ const onGenerateImage = () => {
     state.generateImage();
   }, 200);
 };
+
+/**
+ * Handles dragover event on the root area (Cropper or anywhere).
+ * @param {DragEvent} e
+ */
+const onRootDragOver = (e) => {
+  // Optionally, you can add some UI feedback here
+  e.preventDefault();
+};
+
+/**
+ * Handles drop event on the root area (Cropper or anywhere).
+ * @param {DragEvent} e
+ */
+const onRootDrop = (e) => {
+  // If drop target is inside ImageDropArea, skip (to avoid double registration)
+  if (e.target.closest && e.target.closest('.clipgrid-droparea')) {
+    return;
+  }
+  if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    onImageDropAreaDrop(e.dataTransfer.files);
+  }
+  e.preventDefault();
+};
 </script>
 <template>
-  <div class="clipgrid-root" @dragover.prevent @drop.prevent="onImageDrop">
+  <div class="clipgrid-root" @dragover.prevent="onRootDragOver" @drop.prevent="onRootDrop">
     <div class="clipgrid-main">
       <template v-if="state.image">
         <div class="clipgrid-cropper-wrap">
@@ -219,13 +245,7 @@ const onGenerateImage = () => {
         />
       </template>
       <template v-else>
-        <div class="clipgrid-droparea">
-          <div class="clipgrid-dropicon">📂</div>
-          <div class="clipgrid-dropmsg">Drag and drop image file(s) here</div>
-          <div style="height: 12px;"></div>
-          <div class="clipgrid-dropmsg">All image files are processed offline</div>
-          <div class="clipgrid-dropmsg">(never uploaded to the Internet)</div>
-        </div>
+        <ImageDropArea @drop="onImageDropAreaDrop" />
       </template>
     </div>
     <div class="clipgrid-side">
