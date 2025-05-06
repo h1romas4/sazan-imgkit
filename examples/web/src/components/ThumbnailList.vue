@@ -129,7 +129,15 @@ const onThumbRemove = (idx) => {
       @dragover.prevent="onThumbDragOver(idx)"
       @drop.prevent="onThumbDrop(idx)"
     >
-      <slot name="thumb-remove" :img="img" :idx="idx" :remove="onThumbRemove">
+      <slot
+        name="thumb-remove"
+        :img="img"
+        :idx="idx"
+        :remove="onThumbRemove"
+        :active="idx === activeIndex"
+        :dragging="idx === dragSrcIdx"
+        :dragOver="idx === dragOverIdx"
+      >
         <span class="clipgrid-thumbclose" @click.stop="onThumbRemove(idx)">×</span>
       </slot>
       <img
@@ -138,7 +146,14 @@ const onThumbRemove = (idx) => {
         @click="onThumbClick(idx)"
         :style="{ height: (props.thumbHeight - 16) + 'px' }"
       />
-      <slot name="thumb-name" :img="img" :idx="idx">
+      <slot
+        name="thumb-name"
+        :img="img"
+        :idx="idx"
+        :active="idx === activeIndex"
+        :dragging="idx === dragSrcIdx"
+        :dragOver="idx === dragOverIdx"
+      >
         <div class="clipgrid-thumbname">{{ img.name }}</div>
       </slot>
     </div>
