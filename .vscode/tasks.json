@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "wasm-pack build (sazan-wasm to web vender)",
+			"command": "cd components/sazan-wasm/ && wasm-pack build --target bundler --out-dir ../../examples/web/vendor/sazan-wasm",
+			"group": "build",
+			"problemMatcher": []
+		}
+	]
+}

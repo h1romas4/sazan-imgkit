@@ -10,11 +10,13 @@
   },
   "dependencies": {
     "element-plus": "^2.9.9",
+    "sazan-wasm": "file:./vendor/sazan-wasm",
     "vue": "^3.5.13",
     "vue-advanced-cropper": "^2.8.9"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.2",
-    "vite": "^6.3.1"
+    "vite": "^6.3.1",
+    "vite-plugin-wasm": "^3.4.1"
   }
 }

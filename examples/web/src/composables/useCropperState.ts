@@ -1,4 +1,5 @@
 import { reactive } from 'vue';
+import { cropAndGridImages } from '../utils/sazan-helper';
 
 /**
  * State and logic for image cropping and grid generation.
@@ -289,7 +290,7 @@ class CropperState {
   }
 
   /**
-   * Generates the output grid image from cropped images and opens it in a new tab.
+   * Generates the output grid image from cropped images using sazan-wasm and opens it in a new tab.
    */
   generateImage() {
     // Return early if there are no images
@@ -297,82 +298,87 @@ class CropperState {
       console.error('No images available to generate the grid.');
       return;
     }
-    // Set generating state
     this.isGenerating = true;
 
-    // Check if the first image has a canvas (sanity check)
-    const firstImageCanvas = this.images[0].canvas;
-    if (!firstImageCanvas) {
-      console.error('First image does not have an associated canvas.');
-      this.isGenerating = false;
-      return;
+    // Collect RGBA data for all images, resizing to the largest image size
+    // TODO: Move this resizing logic to Rust/Wasm for better performance and maintainability
+    let maxWidth = 0, maxHeight = 0;
+    for (const imgObj of this.images) {
+      if (imgObj.canvas) {
+        maxWidth = Math.max(maxWidth, imgObj.canvas.width);
+        maxHeight = Math.max(maxHeight, imgObj.canvas.height);
+      }
     }
-
-    // Get crop cell size
-    const cellWidth = this.coordinates.width;
-    const cellHeight = this.coordinates.height;
-    // Create output canvas and context
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      console.error('Failed to get canvas context.');
-      this.isGenerating = false;
-      return;
+    const rgbaImages: Uint8ClampedArray[] = [];
+    for (const imgObj of this.images) {
+      if (!imgObj.canvas) {
+        console.error('Image does not have an associated canvas:', imgObj.name);
+        this.isGenerating = false;
+        return;
+      }
+      const srcCanvas = imgObj.canvas;
+      // Resize to max size (draw at 0,0, transparent fill by default)
+      const dstCanvas = new OffscreenCanvas(maxWidth, maxHeight);
+      const dstCtx = dstCanvas.getContext('2d');
+      if (!dstCtx) {
+        console.error('Failed to get canvas context for resizing:', imgObj.name);
+        this.isGenerating = false;
+        return;
+      }
+      dstCtx.drawImage(srcCanvas, 0, 0);
+      const imageData = dstCtx.getImageData(0, 0, maxWidth, maxHeight);
+      rgbaImages.push(imageData.data);
     }
+    const imageWidth = maxWidth;
+    const imageHeight = maxHeight;
 
-    // Get grid size
-    const gridCols = this.gridCols;
-    const gridRows = this.gridRows;
-    // Set output canvas size
-    canvas.width = gridCols * cellWidth;
-    canvas.height = gridRows * cellHeight;
+    try {
+      const gridCols = this.gridCols;
+      const gridRows = this.gridRows;
+      const cellWidth = this.coordinates.width;
+      const cellHeight = this.coordinates.height;
+      // Use the helper to generate the output RGBA
+      const outRgba = cropAndGridImages(
+        rgbaImages,
+        imageWidth,
+        imageHeight,
+        this.coordinates.left,
+        this.coordinates.top,
+        this.coordinates.width,
+        this.coordinates.height,
+        gridCols,
+        gridRows
+      );
 
-    // Track loaded images
-    let loadedCount = 0;
-    this.images.forEach((image, index) => {
-      // Calculate grid position
-      const col = index % gridCols;
-      const row = Math.floor(index / gridCols);
-      // Skip images that don't fit in the grid
-      if (row >= gridRows) return;
-      // Load image and draw cropped region to output canvas
-      const img = new Image();
-      img.onload = () => {
-        const { left, top, width, height } = this.coordinates;
-        ctx.drawImage(
-          img,
-          left, // Crop start x
-          top,  // Crop start y
-          width, // Crop width
-          height, // Crop height
-          col * cellWidth, // Destination x
-          row * cellHeight, // Destination y
-          cellWidth, // Destination width
-          cellHeight // Destination height
-        );
-        loadedCount++;
-        // When all images are loaded, output the result
-        if (loadedCount === this.images.length) {
-          // Create a Blob and open it in a new tab
-          canvas.toBlob((blob) => {
-            if (blob) {
-              const url = URL.createObjectURL(blob);
-              window.open(url, '_blank');
-              this.isGenerating = false;
-            }
-          }, 'image/png');
-        }
-      };
-      // Handle image load error
-      img.onerror = () => {
-        console.error(`Failed to load image: ${image.url}`);
-        loadedCount++;
-        if (loadedCount === this.images.length) {
+      // Create output OffscreenCanvas and put the RGBA data
+      const outCanvas = new OffscreenCanvas(gridCols * cellWidth, gridRows * cellHeight);
+      const outCtx = outCanvas.getContext('2d');
+      if (!outCtx) {
+        console.error('Failed to get output canvas context.');
+        this.isGenerating = false;
+        return;
+      }
+      const outImageData = new ImageData(
+        new Uint8ClampedArray(outRgba),
+        outCanvas.width,
+        outCanvas.height
+      );
+      outCtx.putImageData(outImageData, 0, 0);
+      // Convert OffscreenCanvas to Blob and open in new tab
+      outCanvas.convertToBlob({ type: 'image/png' }).then(blob => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          window.open(url, '_blank');
           this.isGenerating = false;
         }
-      };
-      img.src = image.url;
-    });
+      }).catch(e => {
+        console.error('Failed to convert OffscreenCanvas to Blob:', e);
+        this.isGenerating = false;
+      });
+    } catch (e) {
+      console.error('Failed to generate grid image with wasm:', e);
+      this.isGenerating = false;
+    }
   }
 }
 

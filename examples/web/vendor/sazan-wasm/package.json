@@ -1,0 +1,20 @@
+{
+  "name": "sazan-wasm",
+  "type": "module",
+  "collaborators": [
+    "h1romas4 <h1romas4@gmail.com>"
+  ],
+  "version": "0.1.0",
+  "files": [
+    "sazan_wasm_bg.wasm",
+    "sazan_wasm.js",
+    "sazan_wasm_bg.js",
+    "sazan_wasm.d.ts"
+  ],
+  "main": "sazan_wasm.js",
+  "types": "sazan_wasm.d.ts",
+  "sideEffects": [
+    "./sazan_wasm.js",
+    "./snippets/*"
+  ]
+}
