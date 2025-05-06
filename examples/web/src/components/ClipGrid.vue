@@ -1,8 +1,9 @@
 <script setup>
-import { watch, computed, nextTick, onMounted, onBeforeUnmount } from 'vue';
+import { computed, onMounted, onBeforeUnmount } from 'vue';
 import { Cropper } from 'vue-advanced-cropper';
 import 'vue-advanced-cropper/dist/style.css';
 import { useCropperState } from '../composables/useCropperState';
+import ThumbnailList from './ThumbnailList.vue';
 
 /**
  * Provides reactive state and logic for image cropping and grid generation UI.
@@ -154,64 +155,21 @@ const onImageDrop = (e) => {
   state.onImageDrop(e);
 };
 
-let dragSrcIdx = null;
-
 /**
- * Handles drag start for image thumbnails (for reordering).
- * @param {number} idx
- * @param {DragEvent} event
+ * Handles thumbnail reorder event from ThumbnailList.
+ * @param {Array} newArr
  */
-const onThumbDragStart = (idx, event) => {
-  dragSrcIdx = idx;
-  const thumb = document.querySelectorAll('.clipgrid-thumb')[idx];
-  if (thumb) {
-    thumb.classList.add('dragging');
-    const img = thumb.querySelector('img');
-    if (img) {
-      event.dataTransfer.setDragImage(img, img.width / 2, img.height / 2);
-    }
+const onReorderImages = (newArr) => {
+  state.images = newArr;
+  // activeImageIndexの整合性を保つ
+  if (state.activeImageIndex >= newArr.length) {
+    state.activeImageIndex = newArr.length - 1;
+  } else {
+    // 新しい配列内で元のactive画像のindexを再計算
+    const activeUrl = state.image;
+    const idx = newArr.findIndex(img => img.url === activeUrl);
+    if (idx !== -1) state.activeImageIndex = idx;
   }
-};
-
-/**
- * Handles drag over event for image thumbnails (for reordering).
- * @param {number} idx
- */
-const onThumbDragOver = (idx) => {
-  const thumbs = document.querySelectorAll('.clipgrid-thumb');
-  thumbs.forEach((thumb, i) => {
-    if (i === idx) {
-      thumb.classList.add('drag-over');
-    } else {
-      thumb.classList.remove('drag-over');
-    }
-  });
-};
-
-/**
- * Handles drop event for image thumbnails (for reordering).
- * @param {number} idx
- */
-const onThumbDrop = (idx) => {
-  const thumbs = document.querySelectorAll('.clipgrid-thumb');
-  thumbs.forEach(thumb => {
-    thumb.classList.remove('dragging', 'drag-over');
-  });
-
-  if (dragSrcIdx === null || dragSrcIdx === idx) return;
-  const arr = state.images;
-  const moved = arr.splice(dragSrcIdx, 1)[0];
-  arr.splice(idx, 0, moved);
-
-  if (state.activeImageIndex === dragSrcIdx) {
-    state.activeImageIndex = idx;
-  } else if (state.activeImageIndex > dragSrcIdx && state.activeImageIndex <= idx) {
-    state.activeImageIndex--;
-  } else if (state.activeImageIndex < dragSrcIdx && state.activeImageIndex >= idx) {
-    state.activeImageIndex++;
-  }
-
-  dragSrcIdx = null;
 };
 
 /**
@@ -251,22 +209,14 @@ const onGenerateImage = () => {
           <span>{{ state.imageWidth }} x {{ state.imageHeight }} px</span>
           <span v-if="state.activeImageIndex >= 0 && state.images[state.activeImageIndex]"> | {{ state.images[state.activeImageIndex].name }}</span>
         </div>
-        <div v-if="state.images.length > 0" class="clipgrid-thumbnails">
-          <div
-            v-for="(img, idx) in state.images"
-            :key="img.url"
-            class="clipgrid-thumb"
-            :class="{ active: idx === state.activeImageIndex }"
-            draggable="true"
-            @dragstart="onThumbDragStart(idx)"
-            @dragover.prevent="onThumbDragOver(idx)"
-            @drop.prevent="onThumbDrop(idx)"
-          >
-            <span class="clipgrid-thumbclose" @click.stop="onRemoveImage(idx)">×</span>
-            <img :src="img.url" :alt="img.name" @click="onSetActiveImage(idx)" />
-            <div class="clipgrid-thumbname">{{ img.name }}</div>
-          </div>
-        </div>
+        <ThumbnailList
+          v-if="state.images.length > 0"
+          :images="state.images"
+          :active-index="state.activeImageIndex"
+          @select="onSetActiveImage"
+          @remove="onRemoveImage"
+          @reorder="onReorderImages"
+        />
       </template>
       <template v-else>
         <div class="clipgrid-droparea">
