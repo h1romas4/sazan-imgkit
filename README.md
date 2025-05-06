@@ -60,3 +60,15 @@ $ cargo run --release --bin sazan -- crop-split --crop 2048x2048+0+0 --grid 3x3 
 ## License
 
 BSD 3-Clause License
+
+## Build
+
+```bash
+cargo build --release
+cd components/sazan-wasm
+wasm-pack build
+cd -
+cd examples/web
+npm install
+npm run build # (or npm run dev)
+```
