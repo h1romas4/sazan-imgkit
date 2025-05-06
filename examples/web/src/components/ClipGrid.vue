@@ -4,29 +4,51 @@ import { Cropper } from 'vue-advanced-cropper';
 import 'vue-advanced-cropper/dist/style.css';
 import { useCropperState } from '../composables/useCropperState';
 
+/**
+ * Provides reactive state and logic for image cropping and grid generation UI.
+ * All state mutation is performed via composable methods.
+ */
 const state = useCropperState();
 
+/**
+ * Vue lifecycle hook: Registers window resize event to refresh cropper UI.
+ */
 onMounted(() => {
   window.addEventListener('resize', refreshCropper);
 });
 
+/**
+ * Vue lifecycle hook: Cleans up window resize event on component unmount.
+ */
 onBeforeUnmount(() => {
   window.removeEventListener('resize', refreshCropper);
 });
 
+/**
+ * Computed binding for crop left coordinate.
+ */
 const left = computed({
   get: () => state.coordinates.left,
   set: v => { state.setCoordinates({ left: v }); }
 });
 
+/**
+ * Computed binding for crop top coordinate.
+ */
 const top = computed({
   get: () => state.coordinates.top,
   set: v => { state.setCoordinates({ top: v }); }
 });
 
+/**
+ * Computed maximum values for crop width and height.
+ */
 const widthMax = computed(() => state.imageWidth);
 const heightMax = computed(() => state.imageHeight);
 
+/**
+ * Computed binding for crop width, respects aspect ratio mode.
+ */
 const width = computed({
   get: () => state.coordinates.width,
   set: v => {
@@ -38,6 +60,9 @@ const width = computed({
   }
 });
 
+/**
+ * Computed binding for crop height, respects aspect ratio mode.
+ */
 const height = computed({
   get: () => state.coordinates.height,
   set: v => {
@@ -49,19 +74,29 @@ const height = computed({
   }
 });
 
+/**
+ * Refreshes the cropper UI (e.g. on window resize).
+ */
 const refreshCropper = () => {
   if (state.cropperRef && typeof state.cropperRef.refresh === 'function') {
     state.cropperRef.refresh();
   }
 };
 
+/**
+ * Handles cropper change event and updates coordinates in state.
+ * @param {object} e - Cropper event object
+ */
 const onCropperChange = (e) => {
   state.onCropperChange(e);
 };
 
+/**
+ * Handles cropper ready event and initializes coordinates in the cropper UI.
+ */
 const onCropperReady = () => {
   if (state.cropperRef && typeof state.cropperRef.setCoordinates === 'function') {
-    // hack
+    // hack: avoid 1px initial width
     if (state.coordinates.width == 1) {
       state.coordinates.width = 500;
     }
@@ -71,21 +106,36 @@ const onCropperReady = () => {
   }
 };
 
+/**
+ * Applies the current coordinates to the cropper UI.
+ */
 const applyCoordinatesToCropper = () => {
   state.applyCoordinatesToCropper();
 };
 
+/**
+ * Computed: true if the coordinates differ from the cropper's current state.
+ */
 const isDirty = computed(() => {
   const a = state.coordinates, b = state.cropperCurrent;
   return a.left !== b.left || a.top !== b.top || a.width !== b.width || a.height !== b.height;
 });
 
+/**
+ * Handles image file drop event and loads images into state.
+ * @param {DragEvent} e
+ */
 const onImageDrop = (e) => {
   state.onImageDrop(e);
 };
 
 let dragSrcIdx = null;
 
+/**
+ * Handles drag start for image thumbnails (for reordering).
+ * @param {number} idx
+ * @param {DragEvent} event
+ */
 const onThumbDragStart = (idx, event) => {
   dragSrcIdx = idx;
   const thumb = document.querySelectorAll('.clipgrid-thumb')[idx];
@@ -98,6 +148,10 @@ const onThumbDragStart = (idx, event) => {
   }
 };
 
+/**
+ * Handles drag over event for image thumbnails (for reordering).
+ * @param {number} idx
+ */
 const onThumbDragOver = (idx) => {
   const thumbs = document.querySelectorAll('.clipgrid-thumb');
   thumbs.forEach((thumb, i) => {
@@ -109,6 +163,10 @@ const onThumbDragOver = (idx) => {
   });
 };
 
+/**
+ * Handles drop event for image thumbnails (for reordering).
+ * @param {number} idx
+ */
 const onThumbDrop = (idx) => {
   const thumbs = document.querySelectorAll('.clipgrid-thumb');
   thumbs.forEach(thumb => {
@@ -131,6 +189,9 @@ const onThumbDrop = (idx) => {
   dragSrcIdx = null;
 };
 
+/**
+ * Handles the "Create Image" button click. Triggers grid image generation with a short delay.
+ */
 const onGenerateImage = () => {
   state.isGenerating = true;
   setTimeout(() => {

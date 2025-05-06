@@ -3,7 +3,6 @@ import { reactive } from 'vue';
 /**
  * State and logic for image cropping and grid generation.
  */
-
 export class CropperState {
   aspectRatioMode: 'square' | 'free' = 'square';
   cropperRef: any = null;
