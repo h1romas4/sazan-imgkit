@@ -6,7 +6,13 @@ It supports both command-line and WebAssembly (Wasm) use cases, enabling advance
 
 ## Usage
 
-### `sazan crop-grid`
+### Web Frountend
+
+🔗 [https://h1romas4.github.io/sazan-imgkit/](https://h1romas4.github.io/sazan-imgkit/)
+
+### CLI
+
+#### `sazan crop-grid`
 
 Crop and montage images into a grid.
 
@@ -27,7 +33,7 @@ Options:
 $ cargo run --release --bin sazan -- crop-grid --crop 2048x2048+684+0 --grid 3x3 tests/souryoku_20250504/pose/*.png -o test.png
 ```
 
-### `sazan crop-split`
+#### `sazan crop-split`
 
 Crop and split images into tiles and save as a ZIP archive.
 
