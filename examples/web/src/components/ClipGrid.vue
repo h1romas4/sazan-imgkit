@@ -2,10 +2,26 @@
 import { watch, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { Cropper } from 'vue-advanced-cropper'
 import 'vue-advanced-cropper/dist/style.css'
-
 import { useCropperState } from '../composables/useCropperState'
 
 const state = useCropperState()
+
+watch(() => state.aspectRatioMode, (newMode, oldMode) => {
+  if (oldMode === 'free' && newMode === 'square') {
+    const minSide = Math.min(state.imageWidth, state.imageHeight);
+    let newValue = Math.min(state.coordinates.width, state.coordinates.height, minSide);
+    state.coordinates = { ...state.coordinates, width: newValue, height: newValue };
+    nextTick(() => state.applyCoordinatesToCropper());
+  }
+});
+
+onMounted(() => {
+  window.addEventListener('resize', refreshCropper);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', refreshCropper);
+});
 
 const left = computed({
   get: () => state.coordinates.left,
@@ -19,15 +35,6 @@ const top = computed({
 
 const widthMax = computed(() => state.imageWidth);
 const heightMax = computed(() => state.imageHeight);
-
-watch(() => state.aspectRatioMode, (newMode, oldMode) => {
-  if (oldMode === 'free' && newMode === 'square') {
-    const minSide = Math.min(state.imageWidth, state.imageHeight);
-    let newValue = Math.min(state.coordinates.width, state.coordinates.height, minSide);
-    state.coordinates = { ...state.coordinates, width: newValue, height: newValue };
-    nextTick(() => state.applyCoordinatesToCropper());
-  }
-});
 
 const width = computed({
   get: () => state.coordinates.width,
@@ -53,25 +60,17 @@ const height = computed({
   }
 })
 
-function refreshCropper() {
+const refreshCropper = () => {
   if (state.cropperRef && typeof state.cropperRef.refresh === 'function') {
     state.cropperRef.refresh();
   }
 }
 
-onMounted(() => {
-  window.addEventListener('resize', refreshCropper);
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', refreshCropper);
-});
-
-function onCropperChange(e) {
+const onCropperChange = (e) => {
   state.onCropperChange(e)
 }
 
-function onCropperReady() {
+const onCropperReady = () => {
   if (state.cropperRef && typeof state.cropperRef.setCoordinates === 'function') {
     // hack
     if (state.coordinates.width == 1) {
@@ -83,7 +82,7 @@ function onCropperReady() {
   }
 }
 
-function applyCoordinatesToCropper() {
+const applyCoordinatesToCropper = () => {
   state.applyCoordinatesToCropper()
 }
 
@@ -92,13 +91,13 @@ const isDirty = computed(() => {
   return a.left !== b.left || a.top !== b.top || a.width !== b.width || a.height !== b.height
 })
 
-function onImageDrop(e) {
+const onImageDrop = (e) => {
   state.onImageDrop(e)
 }
 
 let dragSrcIdx = null;
 
-function onThumbDragStart(idx, event) {
+const onThumbDragStart = (idx, event) => {
   dragSrcIdx = idx;
   const thumb = document.querySelectorAll('.clipgrid-thumb')[idx];
   if (thumb) {
@@ -110,7 +109,7 @@ function onThumbDragStart(idx, event) {
   }
 }
 
-function onThumbDragOver(idx) {
+const onThumbDragOver = (idx) => {
   const thumbs = document.querySelectorAll('.clipgrid-thumb');
   thumbs.forEach((thumb, i) => {
     if (i === idx) {
@@ -121,7 +120,7 @@ function onThumbDragOver(idx) {
   });
 }
 
-function onThumbDrop(idx) {
+const onThumbDrop = (idx) => {
   const thumbs = document.querySelectorAll('.clipgrid-thumb');
   thumbs.forEach(thumb => {
     thumb.classList.remove('dragging', 'drag-over');
@@ -143,8 +142,11 @@ function onThumbDrop(idx) {
   dragSrcIdx = null;
 }
 
-function onGenerateImage() {
-  state.generateImage();
+const onGenerateImage = () => {
+  state.isGenerating = true;
+  setTimeout(() => {
+    state.generateImage();
+  }, 200);
 }
 </script>
 <template>
@@ -171,7 +173,8 @@ function onGenerateImage() {
           />
         </div>
         <div class="image-info">
-          <span>Size: {{ state.imageWidth }} x {{ state.imageHeight }} px</span><br />
+          <span>{{ state.imageWidth }} x {{ state.imageHeight }} px</span>
+          <span v-if="state.activeImageIndex >= 0 && state.images[state.activeImageIndex]"> | {{ state.images[state.activeImageIndex].name }}</span>
         </div>
         <div v-if="state.images.length > 0" class="clipgrid-thumbnails">
           <div
@@ -194,6 +197,9 @@ function onGenerateImage() {
         <div class="clipgrid-droparea">
           <div class="clipgrid-dropicon">📂</div>
           <div class="clipgrid-dropmsg">Drag and drop image file(s) here</div>
+          <div style="height: 12px;"></div>
+          <div class="clipgrid-dropmsg">All image files are processed offline</div>
+          <div class="clipgrid-dropmsg">(never uploaded to the Internet)</div>
         </div>
       </template>
     </div>
@@ -223,15 +229,16 @@ function onGenerateImage() {
             <el-slider v-model="height" :min="1" :max="heightMax" style="width: 100%; margin-top: 4px;" tabindex="-1" @change="applyCoordinatesToCropper" />
           </el-form-item>
           <el-form-item label="Output grid">
-            <el-input-number v-model="state.gridCols" :min="1" :max="9" size="small" style="width: 70px;" />
+            <el-input-number v-model="state.gridCols" :min="1" :max="99" size="small" style="width: 78px;" />
             <span style="margin: 0 6px;">×</span>
-            <el-input-number v-model="state.gridRows" :min="1" :max="9" size="small" style="width: 70px;" />
+            <el-input-number v-model="state.gridRows" :min="1" :max="99" size="small" style="width: 78px;" />
           </el-form-item>
-          <el-button 
-            type="primary" 
-            style="margin-top: 12px; width: 100%;" 
-            :disabled="state.isGenerating" 
+          <el-button
+            type="primary"
+            style="margin-top: 12px; width: 100%;"
+            :disabled="state.isGenerating || state.images.length === 0"
             @click="onGenerateImage"
+            class="clipgrid-generate-btn"
           >
             <template v-if="state.isGenerating">
               <i class="el-icon-loading" style="margin-right: 8px;"></i> Generating...
@@ -328,6 +335,16 @@ pre {
   padding: 0.5em;
   border-radius: 4px;
   text-align: left;
+}
+</style>
+<style scoped>
+.clipgrid-generate-btn:disabled,
+.clipgrid-generate-btn.is-disabled {
+  background: #333 !important;
+  color: #888 !important;
+  border-color: #222 !important;
+  opacity: 1 !important;
+  cursor: not-allowed !important;
 }
 </style>
 <style scoped>
