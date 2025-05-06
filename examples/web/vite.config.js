@@ -7,6 +7,7 @@ export default defineConfig({
   // GitHub Pages
   build: {
     outDir: '../../docs',
+    chunkSizeWarningLimit: 1500, // KB
   },
   base: './',
 })
