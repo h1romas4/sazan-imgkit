@@ -10,6 +10,8 @@ It supports both command-line and WebAssembly (Wasm) use cases, enabling advance
 
 🔗 [https://h1romas4.github.io/sazan-imgkit/](https://h1romas4.github.io/sazan-imgkit/)
 
+![alt text](assets/images/sazan-imgkit-frontend.png)
+
 ### CLI
 
 #### `sazan crop-grid`
