@@ -266,14 +266,14 @@ const onRootDrop = (e) => {
 };
 </script>
 <template>
-  <div class="clipgrid-root" @dragover.prevent="onRootDragOver" @drop.prevent="onRootDrop">
+  <div class="clipgrid-root">
     <!-- Notification for error messages -->
     <MessageNotify :message="state.errorMessage" type="error" />
     <!-- Notification for info messages -->
     <MessageNotify :message="state.infoMessage" type="info" />
     <div class="clipgrid-main">
       <template v-if="state.image">
-        <div class="clipgrid-cropper-wrap">
+        <div class="clipgrid-cropper-wrap" @dragover.prevent="onRootDragOver" @drop.prevent="onRootDrop">
           <Cropper
             :ref="el => state.cropperRef = el"
             :src="state.image"
