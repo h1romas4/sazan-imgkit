@@ -124,10 +124,10 @@ const onThumbRemove = (idx) => {
       class="clipgrid-thumb"
       :class="{ active: idx === activeIndex, dragging: idx === dragSrcIdx, 'drag-over': idx === dragOverIdx }"
       :style="{ width: props.thumbWidth + 'px', height: props.thumbHeight + 'px' }"
-      draggable="true"
-      @dragstart="onThumbDragStart(idx, $event)"
-      @dragover.prevent="onThumbDragOver(idx)"
-      @drop.prevent="onThumbDrop(idx)"
+      :draggable="images.length > 1"
+      @dragstart="images.length > 1 && onThumbDragStart(idx, $event)"
+      @dragover.prevent="images.length > 1 && onThumbDragOver(idx)"
+      @drop.prevent="images.length > 1 && onThumbDrop(idx)"
     >
       <slot
         name="thumb-remove"
@@ -232,5 +232,14 @@ const onThumbRemove = (idx) => {
   border-color: #42b883;
   background: rgba(66, 184, 131, 0.2);
   transition: background 0.2s ease, border-color 0.2s ease;
+}
+.clipgrid-thumb {
+  cursor: pointer;
+}
+.clipgrid-thumb[draggable="true"] {
+  cursor: grab;
+}
+.clipgrid-thumb[draggable="false"] {
+  cursor: default;
 }
 </style>
