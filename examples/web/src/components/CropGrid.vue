@@ -249,6 +249,7 @@ const onReorderImages = (newArr) => {
  */
 const onGenerateImage = () => {
   state.isGenerating = true;
+  state.infoMessage = 'Generating image... Please wait a moment. Also, please allow pop-ups.';
   setTimeout(() => {
     state.generateImage();
   }, 10);

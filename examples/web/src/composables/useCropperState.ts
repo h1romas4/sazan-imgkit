@@ -336,7 +336,6 @@ class CropperState {
       return;
     }
     this.errorMessage = null;
-    this.infoMessage = 'Generating image...';
     this.isGenerating = true;
 
     // Await creation of OffscreenCanvas for all images
@@ -423,7 +422,6 @@ class CropperState {
           window.open(url, '_blank');
           this.isGenerating = false;
           this.errorMessage = null;
-          this.infoMessage = null;
         } else {
           this.errorMessage = 'Failed to create image Blob.';
           this.isGenerating = false;
