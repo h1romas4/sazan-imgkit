@@ -45,22 +45,22 @@ const onDrop = (e) => {
 </script>
 <template>
   <div
-    class="clipgrid-droparea"
+    class="cropgrid-droparea"
     :class="{ dragging: isDragging }"
     @dragover="onDragOver"
     @dragleave="onDragLeave"
     @drop="onDrop"
   >
-    <div class="clipgrid-dropicon">📂</div>
-    <div class="clipgrid-dropmsg">Drag and drop image file(s) here</div>
+    <div class="cropgrid-dropicon">📂</div>
+    <div class="cropgrid-dropmsg">Drag and drop image file(s) here</div>
     <div style="height: 12px;"></div>
-    <div class="clipgrid-dropmsg">All image files are processed offline</div>
-    <div class="clipgrid-dropmsg">(never uploaded to the Internet)</div>
+    <div class="cropgrid-dropmsg">All image files are processed offline</div>
+    <div class="cropgrid-dropmsg">(never uploaded to the Internet)</div>
   </div>
 </template>
 
 <style scoped>
-.clipgrid-droparea {
+.cropgrid-droparea {
   width: 480px;
   height: 360px;
   display: flex;
@@ -75,15 +75,15 @@ const onDrop = (e) => {
   font-size: 18px;
   transition: border-color 0.2s;
 }
-.clipgrid-droparea.dragging {
+.cropgrid-droparea.dragging {
   border-color: #42b883;
   background: #222c;
 }
-.clipgrid-dropicon {
+.cropgrid-dropicon {
   font-size: 48px;
   margin-bottom: 16px;
 }
-.clipgrid-dropmsg {
+.cropgrid-dropmsg {
   font-size: 18px;
   color: #bbb;
 }

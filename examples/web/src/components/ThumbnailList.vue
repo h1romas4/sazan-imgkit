@@ -55,7 +55,7 @@ const dragOverIdx = ref(null);
 const onThumbDragStart = (idx, event) => {
   dragSrcIdx.value = idx;
   dragOverIdx.value = null;
-  const thumb = event.target.closest('.clipgrid-thumb');
+  const thumb = event.target.closest('.cropgrid-thumb');
   if (thumb) {
     const img = thumb.querySelector('img');
     if (img) {
@@ -117,11 +117,11 @@ const onThumbRemove = (idx) => {
 </script>
 
 <template>
-  <div class="clipgrid-thumbnails">
+  <div class="cropgrid-thumbnails">
     <div
       v-for="(img, idx) in images"
       :key="img.url"
-      class="clipgrid-thumb"
+      class="cropgrid-thumb"
       :class="{ active: idx === activeIndex, dragging: idx === dragSrcIdx, 'drag-over': idx === dragOverIdx }"
       :style="{ width: props.thumbWidth + 'px', height: props.thumbHeight + 'px' }"
       :draggable="images.length > 1"
@@ -138,7 +138,7 @@ const onThumbRemove = (idx) => {
         :dragging="idx === dragSrcIdx"
         :dragOver="idx === dragOverIdx"
       >
-        <span class="clipgrid-thumbclose" @click.stop="onThumbRemove(idx)">×</span>
+        <span class="cropgrid-thumbclose" @click.stop="onThumbRemove(idx)">×</span>
       </slot>
       <img
         :src="img.url"
@@ -154,14 +154,14 @@ const onThumbRemove = (idx) => {
         :dragging="idx === dragSrcIdx"
         :dragOver="idx === dragOverIdx"
       >
-        <div class="clipgrid-thumbname">{{ img.name }}</div>
+        <div class="cropgrid-thumbname">{{ img.name }}</div>
       </slot>
     </div>
   </div>
 </template>
 
 <style scoped>
-.clipgrid-thumbnails {
+.cropgrid-thumbnails {
   display: flex;
   flex-direction: row;
   gap: 12px;
@@ -169,7 +169,7 @@ const onThumbRemove = (idx) => {
   flex-wrap: wrap;
   justify-content: center;
 }
-.clipgrid-thumb {
+.cropgrid-thumb {
   border: 2px solid #444;
   border-radius: 6px;
   /* width/height are now set via style binding */
@@ -182,16 +182,16 @@ const onThumbRemove = (idx) => {
   transition: border-color 0.2s;
   position: relative;
 }
-.clipgrid-thumb.active {
+.cropgrid-thumb.active {
   border-color: #42b883;
 }
-.clipgrid-thumb img {
+.cropgrid-thumb img {
   width: 100%;
   height: 48px;
   object-fit: cover;
   display: block;
 }
-.clipgrid-thumbname {
+.cropgrid-thumbname {
   font-size: 11px;
   color: #bbb;
   text-align: center;
@@ -200,7 +200,7 @@ const onThumbRemove = (idx) => {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.clipgrid-thumbclose {
+.cropgrid-thumbclose {
   position: absolute;
   top: 2px;
   right: 4px;
@@ -216,30 +216,30 @@ const onThumbRemove = (idx) => {
   z-index: 2;
   transition: background 0.2s, color 0.2s;
 }
-.clipgrid-thumbclose:hover {
+.cropgrid-thumbclose:hover {
   background: #e55;
   color: #fff;
 }
-.clipgrid-thumb {
+.cropgrid-thumb {
   cursor: grab;
 }
-.clipgrid-thumb.dragging {
+.cropgrid-thumb.dragging {
   cursor: grabbing;
   opacity: 0.5;
   transform: scale(1.1);
 }
-.clipgrid-thumb.drag-over {
+.cropgrid-thumb.drag-over {
   border-color: #42b883;
   background: rgba(66, 184, 131, 0.2);
   transition: background 0.2s ease, border-color 0.2s ease;
 }
-.clipgrid-thumb {
+.cropgrid-thumb {
   cursor: pointer;
 }
-.clipgrid-thumb[draggable="true"] {
+.cropgrid-thumb[draggable="true"] {
   cursor: grab;
 }
-.clipgrid-thumb[draggable="false"] {
+.cropgrid-thumb[draggable="false"] {
   cursor: default;
 }
 </style>

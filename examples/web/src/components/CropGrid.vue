@@ -67,7 +67,7 @@ const onGlobalPaste = (e) => {
 };
 
 /**
- * Renames files to the format clip_N.ext (clip_1.png, clip_2.jpg, ...).
+ * Renames files to the format crop_N.ext (crop_1.png, crop_2.jpg, ...).
  * @param {FileList|File[]} files - The files to rename.
  * @returns {FileList} The renamed files as a FileList.
  */
@@ -76,7 +76,7 @@ const renameFiles = (files) => {
   const dt = new DataTransfer();
   arr.forEach((file, i) => {
     const ext = file.name.split('.').pop() || 'png';
-    const newName = `clip_${i + 1}.${ext}`;
+    const newName = `crop_${i + 1}.${ext}`;
     const renamed = new File([file], newName, { type: file.type });
     dt.items.add(renamed);
   });
@@ -256,7 +256,7 @@ const onRootDragOver = (e) => {
  */
 const onRootDrop = (e) => {
   // If drop target is inside ImageDropArea, skip (to avoid double registration)
-  if (e.target.closest && e.target.closest('.clipgrid-droparea')) {
+  if (e.target.closest && e.target.closest('.cropgrid-droparea')) {
     return;
   }
   if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
@@ -266,14 +266,14 @@ const onRootDrop = (e) => {
 };
 </script>
 <template>
-  <div class="clipgrid-root">
+  <div class="cropgrid-root">
     <!-- Notification for error messages -->
     <MessageNotify :message="state.errorMessage" type="error" />
     <!-- Notification for info messages -->
     <MessageNotify :message="state.infoMessage" type="info" />
-    <div class="clipgrid-main">
+    <div class="cropgrid-main">
       <template v-if="state.image">
-        <div class="clipgrid-cropper-wrap" @dragover.prevent="onRootDragOver" @drop.prevent="onRootDrop">
+        <div class="cropgrid-cropper-wrap" @dragover.prevent="onRootDragOver" @drop.prevent="onRootDrop">
           <Cropper
             :ref="el => state.cropperRef = el"
             :src="state.image"
@@ -287,7 +287,7 @@ const onRootDrop = (e) => {
             :transitions="true"
             :resize-image="false"
             :resize-stencil="false"
-            class="clipgrid-cropper"
+            class="cropgrid-cropper"
             @change="onCropperChange"
             @ready="onCropperReady"
           />
@@ -303,13 +303,14 @@ const onRootDrop = (e) => {
           @select="onSetActiveImage"
           @remove="onRemoveImage"
           @reorder="onReorderImages"
+          class="cropgrid-thumbnails"
         />
       </template>
       <template v-else>
-        <ImageDropArea ref="imageDropAreaRef" @drop="onImageDropAreaDrop" />
+        <ImageDropArea ref="imageDropAreaRef" @drop="onImageDropAreaDrop" class="cropgrid-droparea" />
       </template>
     </div>
-    <div class="clipgrid-side">
+    <div class="cropgrid-side">
       <div v-if="state.coordinates">
         <el-form label-position="top" size="small">
           <el-form-item label="Aspect ratio">
@@ -344,7 +345,7 @@ const onRootDrop = (e) => {
             style="margin-top: 12px; width: 100%;"
             :disabled="state.isGenerating || state.images.length === 0"
             @click="onGenerateImage"
-            class="clipgrid-generate-btn"
+            class="cropgrid-generate-btn"
           >
             <template v-if="state.isGenerating">
               <i class="el-icon-loading" style="margin-right: 8px;"></i> Generating...
@@ -360,7 +361,7 @@ const onRootDrop = (e) => {
 </template>
 
 <style scoped>
-.clipgrid-root {
+.cropgrid-root {
   display: flex;
   flex-direction: row;
   max-width: 1366px;
@@ -370,7 +371,7 @@ const onRootDrop = (e) => {
   min-height: 420px;
 }
 
-.clipgrid-main {
+.cropgrid-main {
   width: 860px;
   min-width: 860px;
   max-width: 860px;
@@ -384,7 +385,7 @@ const onRootDrop = (e) => {
   max-height: 90vh;
 }
 
-.clipgrid-cropper-wrap {
+.cropgrid-cropper-wrap {
   width: 100%;
   height: 576px;
   min-height: 384px;
@@ -409,7 +410,7 @@ const onRootDrop = (e) => {
   text-align: center;
 }
 
-.clipgrid-cropper {
+.cropgrid-cropper {
   width: 100%;
   height: 100%;
   background: #222;
@@ -420,7 +421,7 @@ const onRootDrop = (e) => {
   border-radius: 10px;
 }
 
-.clipgrid-side {
+.cropgrid-side {
   width: 240px;
   min-width: 240px;
   max-width: 240px;
@@ -443,8 +444,8 @@ pre {
   text-align: left;
 }
 
-.clipgrid-generate-btn:disabled,
-.clipgrid-generate-btn.is-disabled {
+.cropgrid-generate-btn:disabled,
+.cropgrid-generate-btn.is-disabled {
   background: #333 !important;
   color: #888 !important;
   border-color: #222 !important;
@@ -452,7 +453,7 @@ pre {
   cursor: not-allowed !important;
 }
 
-.clipgrid-thumbnails {
+.cropgrid-thumbnails {
   display: flex;
   flex-direction: row;
   gap: 12px;
@@ -461,7 +462,7 @@ pre {
   justify-content: center;
 }
 
-.clipgrid-thumb {
+.cropgrid-thumb {
   border: 2px solid #444;
   border-radius: 6px;
   width: 64px;
@@ -476,18 +477,18 @@ pre {
   position: relative;
 }
 
-.clipgrid-thumb.active {
+.cropgrid-thumb.active {
   border-color: #42b883;
 }
 
-.clipgrid-thumb img {
+.cropgrid-thumb img {
   width: 100%;
   height: 48px;
   object-fit: cover;
   display: block;
 }
 
-.clipgrid-thumbname {
+.cropgrid-thumbname {
   font-size: 11px;
   color: #bbb;
   text-align: center;
@@ -497,7 +498,7 @@ pre {
   text-overflow: ellipsis;
 }
 
-.clipgrid-thumbclose {
+.cropgrid-thumbclose {
   position: absolute;
   top: 2px;
   right: 4px;
@@ -514,28 +515,28 @@ pre {
   transition: background 0.2s, color 0.2s;
 }
 
-.clipgrid-thumbclose:hover {
+.cropgrid-thumbclose:hover {
   background: #e55;
   color: #fff;
 }
 
-.clipgrid-thumb {
+.cropgrid-thumb {
   cursor: grab;
 }
 
-.clipgrid-thumb.dragging {
+.cropgrid-thumb.dragging {
   cursor: grabbing;
   opacity: 0.5;
   transform: scale(1.1);
 }
 
-.clipgrid-thumb.drag-over {
+.cropgrid-thumb.drag-over {
   border-color: #42b883;
   background: rgba(66, 184, 131, 0.2);
   transition: background 0.2s ease, border-color 0.2s ease;
 }
 
-.clipgrid-droparea {
+.cropgrid-droparea {
   width: 480px;
   height: 360px;
   display: flex;
@@ -551,12 +552,12 @@ pre {
   transition: border-color 0.2s;
 }
 
-.clipgrid-dropicon {
+.cropgrid-dropicon {
   font-size: 48px;
   margin-bottom: 16px;
 }
 
-.clipgrid-dropmsg {
+.cropgrid-dropmsg {
   font-size: 18px;
   color: #bbb;
 }

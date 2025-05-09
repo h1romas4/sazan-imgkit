@@ -1,8 +1,8 @@
 
 <script setup>
 import { ref } from 'vue';
-import ClipGrid from './components/ClipGrid.vue';
-const activeTab = ref('clipgrid');
+import CropGrid from './components/CropGrid.vue';
+const activeTab = ref('cropgrid');
 </script>
 
 <template>
@@ -12,8 +12,8 @@ const activeTab = ref('clipgrid');
   style="height: 100vh;"
   class="dark-tabs"
 >
-    <el-tab-pane label="Clip and Grid" name="clipgrid">
-      <ClipGrid />
+    <el-tab-pane label="Crop and Grid" name="cropgrid">
+      <CropGrid />
     </el-tab-pane>
   </el-tabs>
 </template>
