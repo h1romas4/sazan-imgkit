@@ -449,6 +449,14 @@ class CropperState {
       this.isGenerating = false;
       this.infoMessage = null;
     }
+
+    // Release OffscreenCanvas references after generating the image to help free memory.
+    // This allows garbage collection to reclaim the memory used by the canvases.
+    for (const imgObj of this.images) {
+      // Remove the canvas property so it is no longer referenced.
+      // OffscreenCanvas does not have a close/dispose method, so this is sufficient.
+      imgObj.canvas = undefined;
+    }
   }
 }
 
