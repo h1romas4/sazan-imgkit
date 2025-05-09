@@ -291,10 +291,10 @@ class CropperState {
         const nextIdx = idx > 0 ? idx - 1 : 0;
         this.activeImageIndex = nextIdx;
         this.image = this.images[nextIdx].url;
-        await this.updateImageSize(this.image, false);
       } else if (this.activeImageIndex > idx) {
         this.activeImageIndex--;
       }
+      await this.updateImageSize(this.image, true);
     }
   }
 
