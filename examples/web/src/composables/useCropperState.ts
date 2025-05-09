@@ -39,14 +39,29 @@ class CropperState {
    * Current crop coordinates (left, top, width, height).
    * Bound to the cropper UI and updated by user interaction.
    * @type {{ left: number, top: number, width: number, height: number }}
+   *
+   * Now: Proxy to images[activeImageIndex].coordinates if available.
    */
-  coordinates = { left: 0, top: 0, width: 100, height: 100 };
+  get coordinates() {
+    if (this.activeImageIndex >= 0 && this.images[this.activeImageIndex]) {
+      return this.images[this.activeImageIndex].coordinates;
+    }
+    return { left: 0, top: 0, width: 500, height: 500 };
+  }
+  set coordinates(val) {
+    if (this.activeImageIndex >= 0 && this.images[this.activeImageIndex]) {
+      // Synchronize coordinates for all images
+      for (const img of this.images) {
+        img.coordinates = { ...val };
+      }
+    }
+  }
 
   /**
    * The cropper's last known coordinates (used for dirty checking).
    * @type {{ left: number, top: number, width: number, height: number }}
    */
-  cropperCurrent = { left: 0, top: 0, width: 100, height: 100 };
+  cropperCurrent = { left: 0, top: 0, width: 500, height: 500 };
 
   /**
    * Number of columns in the output grid image.
@@ -61,10 +76,10 @@ class CropperState {
   gridRows = 3;
 
   /**
-   * List of uploaded images with metadata and optional OffscreenCanvas.
-   * @type {Array<{ name: string; url: string; canvas?: OffscreenCanvas }>}
+   * List of uploaded images with metadata, per-image coordinates, and optional OffscreenCanvas.
+   * @type {Array<{ name: string; url: string; coordinates: { left: number, top: number, width: number, height: number }, canvas?: OffscreenCanvas }>}
    */
-  images: { name: string; url: string; canvas?: OffscreenCanvas }[] = [];
+  images: { name: string; url: string; coordinates: { left: number, top: number, width: number, height: number }, canvas?: OffscreenCanvas }[] = [];
 
   /**
    * Index of the currently active image in the images array. -1 if no image is active.
@@ -72,11 +87,7 @@ class CropperState {
    */
   activeImageIndex: number = -1;
 
-  /**
-   * Last used crop coordinates (for restoring when switching images). Null if not available.
-   * @type {{ left: number, top: number, width: number, height: number } | null}
-   */
-  lastCoordinates: { left: number, top: number, width: number, height: number } | null = null;
+  // lastCoordinates is no longer needed; use image.coordinates directly
 
   /**
    * Data URL of the currently active image.
@@ -154,13 +165,10 @@ class CropperState {
       img.onload = () => {
         this.imageWidth = img.naturalWidth;
         this.imageHeight = img.naturalHeight;
-        if (keepCoordinates && this.lastCoordinates) {
-          this.coordinates = {
-            left: this.lastCoordinates.left,
-            top: this.lastCoordinates.top,
-            width: this.lastCoordinates.width,
-            height: this.lastCoordinates.height,
-          };
+        // always use the image's own coordinates, or set default if not present
+        const imgObj = this.images.find(i => i.url === src);
+        if (imgObj && keepCoordinates && imgObj.coordinates) {
+          this.coordinates = { ...imgObj.coordinates };
         } else {
           const cropW = Math.floor(img.naturalWidth / 2);
           const cropH = cropW;
@@ -239,17 +247,17 @@ class CropperState {
         newImages.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
         // Add to existing images
         for (const img of newImages) {
-          this.images.push({ name: img.name, url: img.url });
+          // Set initial coordinates
+          this.images.push({
+            name: img.name,
+            url: img.url,
+            coordinates: { left: 0, top: 0, width: 500, height: 500 },
+          });
         }
         // Set the last added image as active
         this.activeImageIndex = this.images.length - 1;
-        if (this.image) {
-          this.lastCoordinates = { ...this.coordinates };
-        } else {
-          this.lastCoordinates = null;
-        }
         this.image = this.images[this.activeImageIndex].url;
-        await this.updateImageSize(this.image, !!this.lastCoordinates);
+        await this.updateImageSize(this.image, true);
         this.infoMessage = null;
       } catch (err) {
         this.errorMessage = 'Failed to read one or more files.';
@@ -264,14 +272,10 @@ class CropperState {
    */
   async setActiveImage(idx: number) {
     if (idx >= 0 && idx < this.images.length) {
-      if (this.image) {
-        this.lastCoordinates = { ...this.coordinates };
-      } else {
-        this.lastCoordinates = null;
-      }
       this.activeImageIndex = idx;
-      await this.updateImageSize(this.image, !!this.lastCoordinates);
-      this.image = this.images[idx].url;
+      const nextUrl = this.images[idx].url;
+      this.image = nextUrl;
+      await this.updateImageSize(this.image, true);
     }
   }
 
@@ -346,6 +350,14 @@ class CropperState {
       this.isGenerating = false;
       return;
     }
+    // Use coordinates of the first image for generate
+    let coordinatesToUse: { left: number, top: number, width: number, height: number };
+    if (this.images.length > 0 && this.images[0].coordinates) {
+      coordinatesToUse = this.images[0].coordinates;
+    } else {
+      coordinatesToUse = { left: 0, top: 0, width: 100, height: 100 };
+    }
+
     // Collect RGBA data and determine the maximum image size
     let maxWidth = 0, maxHeight = 0;
     for (const imgObj of this.images) {
@@ -386,17 +398,17 @@ class CropperState {
     try {
       const gridCols = this.gridCols;
       const gridRows = this.gridRows;
-      const cellWidth = this.coordinates.width;
-      const cellHeight = this.coordinates.height;
+      const cellWidth = coordinatesToUse.width;
+      const cellHeight = coordinatesToUse.height;
       // Use the helper to generate the output RGBA
       const outRgba = cropAndGridImages(
         rgbaImages,
         imageWidth,
         imageHeight,
-        this.coordinates.left,
-        this.coordinates.top,
-        this.coordinates.width,
-        this.coordinates.height,
+        coordinatesToUse.left,
+        coordinatesToUse.top,
+        coordinatesToUse.width,
+        coordinatesToUse.height,
         gridCols,
         gridRows
       );
