@@ -36,6 +36,12 @@ onBeforeUnmount(() => {
 const imageDropAreaRef = ref();
 
 /**
+ * Ref for the cropper component, used to access cropper methods.
+ * @type {import('vue').Ref<InstanceType<typeof Cropper>>}
+ */
+const cropperReady = ref(true);
+
+/**
  * Handles global paste event for image files.
  * If ImageDropArea is visible, delegates to its handlePaste method.
  * Otherwise, extracts image files from clipboard and registers them.
@@ -163,6 +169,11 @@ const onCropperReady = () => {
       ...state.coordinates,
     });
   }
+  // HACK: Wait 200ms before enabling thumbnail selection to ensure cropper state is fully stable.
+  // This avoids race conditions when switching images rapidly (e.g., multiple thumbnail clicks during image loading).
+  setTimeout(() => {
+    cropperReady.value = true;
+  }, 500);
 };
 
 /**
@@ -185,8 +196,10 @@ const onAspectRatioChange = v => {
  * Handles setting the active image from the UI.
  * @param {number} idx
  */
-const onSetActiveImage = idx => {
-  state.setActiveImage(idx);
+const onSetActiveImage = async idx => {
+  if (!cropperReady.value) return;
+  cropperReady.value = false;
+  await state.setActiveImage(idx);
 };
 
 /**
@@ -284,7 +297,6 @@ const onRootDrop = (e) => {
             :max-height="state.imageHeight"
             :default-size="{ width: state.coordinates.width, height: state.coordinates.height }"
             :default-position="{ left: state.coordinates.left, top: state.coordinates.top }"
-            :transitions="true"
             :resize-image="false"
             :resize-stencil="false"
             class="cropgrid-cropper"
@@ -300,6 +312,7 @@ const onRootDrop = (e) => {
           v-if="state.images.length > 0"
           :images="state.images"
           :active-index="state.activeImageIndex"
+          :disabled="!cropperReady"
           @select="onSetActiveImage"
           @remove="onRemoveImage"
           @reorder="onReorderImages"

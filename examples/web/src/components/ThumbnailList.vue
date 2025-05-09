@@ -25,6 +25,10 @@ const props = defineProps({
     type: Number,
     default: 64,
   },
+  disabled: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 /**
@@ -104,6 +108,7 @@ const onThumbDrop = (idx) => {
  * @param {number} idx
  */
 const onThumbClick = (idx) => {
+  if (props.disabled) return;
   emit('select', idx);
 };
 
@@ -144,7 +149,7 @@ const onThumbRemove = (idx) => {
         :src="img.url"
         :alt="img.name"
         @click="onThumbClick(idx)"
-        :style="{ height: (props.thumbHeight - 16) + 'px' }"
+        :style="{ height: (props.thumbHeight - 16) + 'px', opacity: props.disabled ? 0.5 : 1, pointerEvents: props.disabled ? 'none' : 'auto' }"
       />
       <slot
         name="thumb-name"
