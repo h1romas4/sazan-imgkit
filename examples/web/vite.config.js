@@ -1,6 +1,8 @@
+
 import { defineConfig } from 'vite'
 import wasm from 'vite-plugin-wasm';
 import vue from '@vitejs/plugin-vue';
+import pkg from './package.json';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -18,4 +20,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 1500, // KB
   },
   base: './',
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
 })
