@@ -365,11 +365,12 @@ const onRootDrop = (e) => {
             type="primary"
             style="margin-top: 12px; width: 100%;"
             :disabled="state.isGenerating || state.images.length === 0"
+            :loading="state.isGenerating"
             @click="onGenerateImage"
             class="cropgrid-generate-btn"
           >
             <template v-if="state.isGenerating">
-              <i class="el-icon-loading" style="margin-right: 8px;"></i> Generating...
+              Generating...
             </template>
             <template v-else>
               Create Image
@@ -465,10 +466,14 @@ pre {
   text-align: left;
 }
 
+.cropgrid-generate-btn {
+  height: 44px !important; /* Double the height (was about 44px) */
+  font-size: 0.9em;
+}
 .cropgrid-generate-btn:disabled,
 .cropgrid-generate-btn.is-disabled {
   background: #333 !important;
-  color: #888 !important;
+  color: #fff !important; /* Make text white when disabled */
   border-color: #222 !important;
   opacity: 1 !important;
   cursor: not-allowed !important;
