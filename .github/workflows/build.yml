@@ -8,6 +8,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Cache cargo registry and bin
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
       - uses: actions/checkout@v3
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -15,7 +26,10 @@ jobs:
           toolchain: stable
           override: true
       - name: Install wasm-pack
-        run: cargo install wasm-pack
+        run: |
+          if ! command -v wasm-pack >/dev/null; then
+            cargo install wasm-pack --version 0.12.1
+          fi
       - name: Build Rust (native)
         run: cargo build --release
       - name: Build wasm-pack (Wasm)
