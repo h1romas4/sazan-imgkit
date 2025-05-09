@@ -233,11 +233,11 @@ const onImageDropAreaDrop = (files) => {
  */
 const onReorderImages = (newArr) => {
   state.images = newArr;
-  // activeImageIndexの整合性を保つ
+  // Ensure consistency of activeImageIndex
   if (state.activeImageIndex >= newArr.length) {
     state.activeImageIndex = newArr.length - 1;
   } else {
-    // 新しい配列内で元のactive画像のindexを再計算
+    // Recalculate the index of the original active image in the new array
     const activeUrl = state.image;
     const idx = newArr.findIndex(img => img.url === activeUrl);
     if (idx !== -1) state.activeImageIndex = idx;
