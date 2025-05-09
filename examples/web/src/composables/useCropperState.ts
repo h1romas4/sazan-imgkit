@@ -217,6 +217,8 @@ class CropperState {
   async onImageDrop(e: DragEvent) {
     const files = e.dataTransfer?.files;
     if (files && files.length > 0) {
+      // Show info message while registering images
+      this.infoMessage = 'Registering image files...';
       // Get DataURL for all files using Promise
       const readFileAsDataURL = (file: File) => new Promise<{ name: string; url: string }>((resolve, reject) => {
         const reader = new FileReader();
@@ -244,8 +246,10 @@ class CropperState {
         }
         this.image = this.images[this.activeImageIndex].url;
         this.updateImageSize(this.image, !!this.lastCoordinates);
+        this.infoMessage = null;
       } catch (err) {
         this.errorMessage = 'Failed to read one or more files.';
+        this.infoMessage = null;
       }
     }
   }
