@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
+import { computed, onMounted, onBeforeUnmount, nextTick, ref } from 'vue';
 import { Cropper } from 'vue-advanced-cropper';
 import 'vue-advanced-cropper/dist/style.css';
 import { useCropperState } from '../composables/useCropperState';
@@ -249,10 +249,17 @@ const onReorderImages = (newArr) => {
  */
 const onGenerateImage = () => {
   state.isGenerating = true;
-  state.infoMessage = 'Generating image... Please wait a moment. Also, please allow pop-ups.';
-  setTimeout(() => {
-    state.generateImage();
-  }, 10);
+  // NOTE: ElMessage (used in MessageNotify) suppresses duplicate messages.
+  // To force the info notification to show every time, even with the same message,
+  // we clear infoMessage first, then set it again on the next tick.
+  // This is a workaround for Element Plus message deduplication.
+  state.infoMessage = '';
+  nextTick(() => {
+    state.infoMessage = 'Generating image... Please wait a moment. Also, please allow pop-ups.';
+    nextTick(() => {
+      state.generateImage();
+    });
+  });
 };
 
 /**
