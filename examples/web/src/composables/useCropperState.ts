@@ -210,57 +210,42 @@ class CropperState {
 
   /**
    * Handles image file drop event and loads images into state.
+   * After all files are loaded, sorts the images by file name.
+   * Now implemented with Promise for all file reads.
    * @param {DragEvent} e - The drag event containing files
    */
-  onImageDrop(e: DragEvent) {
-    // Get files from the drag event
+  async onImageDrop(e: DragEvent) {
     const files = e.dataTransfer?.files;
     if (files && files.length > 0) {
-      // Loop through each dropped file
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+      // Get DataURL for all files using Promise
+      const readFileAsDataURL = (file: File) => new Promise<{ name: string; url: string }>((resolve, reject) => {
         const reader = new FileReader();
-        // Read file as DataURL
         reader.onload = (ev) => {
           const url = ev.target?.result as string;
-          // Add image to state and update active index
-          this.images.push({ name: file.name, url });
-          this.activeImageIndex = this.images.length - 1;
-          // Save last coordinates if an image is already loaded
-          if (this.image) {
-            this.lastCoordinates = { ...this.coordinates };
-          } else {
-            this.lastCoordinates = null;
-          }
-          // Set new image and update size/coordinates
-          this.image = url;
-          this.updateImageSize(this.image, !!this.lastCoordinates);
-
-          // Load image and extract RGBA data using OffscreenCanvas
-          const img = new Image();
-          img.onload = () => {
-            // Create OffscreenCanvas and draw image
-            const offscreenCanvas = new OffscreenCanvas(img.width, img.height);
-            const ctx = offscreenCanvas.getContext('2d');
-            if (ctx) {
-              ctx.drawImage(img, 0, 0);
-              // Get RGBA pixel data
-              const imageData = ctx.getImageData(0, 0, img.width, img.height);
-              const rgbaData = imageData.data; // RGBA data
-              // Attach canvas to image object in state
-              const existingImage = this.images.find(image => image.url === url);
-              if (existingImage) {
-                existingImage.canvas = offscreenCanvas;
-              } else {
-                this.images.push({ name: file.name, url, canvas: offscreenCanvas });
-              }
-            }
-            // Sort images by filename
-            this.images.sort((a, b) => a.name.localeCompare(b.name));
-          };
-          img.src = url;
+          resolve({ name: file.name, url });
         };
+        reader.onerror = reject;
         reader.readAsDataURL(file);
+      });
+      try {
+        const newImages = await Promise.all(Array.from(files).map(file => readFileAsDataURL(file)));
+        // Sort by file name
+        newImages.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+        // Add to existing images
+        for (const img of newImages) {
+          this.images.push({ name: img.name, url: img.url });
+        }
+        // Set the last added image as active
+        this.activeImageIndex = this.images.length - 1;
+        if (this.image) {
+          this.lastCoordinates = { ...this.coordinates };
+        } else {
+          this.lastCoordinates = null;
+        }
+        this.image = this.images[this.activeImageIndex].url;
+        this.updateImageSize(this.image, !!this.lastCoordinates);
+      } catch (err) {
+        this.errorMessage = 'Failed to read one or more files.';
       }
     }
   }
@@ -306,10 +291,38 @@ class CropperState {
   }
 
   /**
+   * Asynchronously creates and sets an OffscreenCanvas for the given image object if not already present.
+   * @param {object} imgObj - { name, url, canvas? }
+   * @returns {Promise<void>}
+   */
+  async ensureImageCanvas(imgObj: { name: string; url: string; canvas?: OffscreenCanvas }): Promise<void> {
+    if (imgObj.canvas) return;
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = imgObj.url;
+      img.onload = () => {
+        try {
+          const offscreenCanvas = new OffscreenCanvas(img.width, img.height);
+          const ctx = offscreenCanvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            imgObj.canvas = offscreenCanvas;
+            resolve();
+          } else {
+            reject(new Error('Failed to get 2d context'));
+          }
+        } catch (e) {
+          reject(e);
+        }
+      };
+      img.onerror = () => reject(new Error('Failed to load image: ' + imgObj.name));
+    });
+  }
+
+  /**
    * Generates the output grid image from cropped images using sazan-wasm and opens it in a new tab.
    */
-  generateImage() {
-    // Return early if there are no images
+  async generateImage() {
     if (this.images.length === 0) {
       this.errorMessage = 'No images available. Cannot generate grid image.';
       return;
@@ -318,8 +331,15 @@ class CropperState {
     this.infoMessage = 'Generating image...';
     this.isGenerating = true;
 
-    // Collect RGBA data for all images, resizing to the largest image size
-    // TODO: Move this resizing logic to Rust/Wasm for better performance and maintainability
+    // Await creation of OffscreenCanvas for all images
+    try {
+      await Promise.all(this.images.map(imgObj => this.ensureImageCanvas(imgObj)));
+    } catch (e: any) {
+      this.errorMessage = e?.message || 'Failed to load one or more images.';
+      this.isGenerating = false;
+      return;
+    }
+    // Collect RGBA data and determine the maximum image size
     let maxWidth = 0, maxHeight = 0;
     for (const imgObj of this.images) {
       if (imgObj.canvas) {
@@ -335,17 +355,23 @@ class CropperState {
         return;
       }
       const srcCanvas = imgObj.canvas;
-      // Resize to max size (draw at 0,0, transparent fill by default)
-      const dstCanvas = new OffscreenCanvas(maxWidth, maxHeight);
-      const dstCtx = dstCanvas.getContext('2d');
-      if (!dstCtx) {
-        this.errorMessage = `Failed to create resize canvas for image: ${imgObj.name}`;
-        this.isGenerating = false;
-        return;
+      // Use the existing canvas for images with the maximum size
+      if (srcCanvas.width === maxWidth && srcCanvas.height === maxHeight) {
+        const imageData = srcCanvas.getContext('2d')!.getImageData(0, 0, maxWidth, maxHeight);
+        rgbaImages.push(imageData.data);
+      } else {
+        // For other images, create a new OffscreenCanvas for resizing
+        const dstCanvas = new OffscreenCanvas(maxWidth, maxHeight);
+        const dstCtx = dstCanvas.getContext('2d');
+        if (!dstCtx) {
+          this.errorMessage = `Failed to create resize canvas for image: ${imgObj.name}`;
+          this.isGenerating = false;
+          return;
+        }
+        dstCtx.drawImage(srcCanvas, 0, 0);
+        const imageData = dstCtx.getImageData(0, 0, maxWidth, maxHeight);
+        rgbaImages.push(imageData.data);
       }
-      dstCtx.drawImage(srcCanvas, 0, 0);
-      const imageData = dstCtx.getImageData(0, 0, maxWidth, maxHeight);
-      rgbaImages.push(imageData.data);
     }
     const imageWidth = maxWidth;
     const imageHeight = maxHeight;
