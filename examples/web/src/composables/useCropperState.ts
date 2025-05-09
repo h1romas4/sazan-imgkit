@@ -147,33 +147,37 @@ class CropperState {
    * @param {string} src - Image source URL
    * @param {boolean} [keepCoordinates=false] - Whether to keep previous coordinates
    */
-  updateImageSize(src: string, keepCoordinates: boolean = false) {
+  async updateImageSize(src: string, keepCoordinates: boolean = false) {
     if (!src) return;
     const img = new window.Image();
-    img.onload = () => {
-      this.imageWidth = img.naturalWidth;
-      this.imageHeight = img.naturalHeight;
-      if (keepCoordinates && this.lastCoordinates) {
-        this.coordinates = {
-          left: this.lastCoordinates.left,
-          top: this.lastCoordinates.top,
-          width: this.lastCoordinates.width,
-          height: this.lastCoordinates.height,
-        };
-      } else {
-        const cropW = Math.floor(img.naturalWidth / 2);
-        const cropH = cropW;
-        const cropL = Math.floor((img.naturalWidth - cropW) / 2);
-        const cropT = Math.floor((img.naturalHeight - cropH) / 2);
-        this.coordinates = {
-          left: cropL,
-          top: cropT,
-          width: cropW,
-          height: cropH,
-        };
-      }
-    };
-    img.src = src;
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => {
+        this.imageWidth = img.naturalWidth;
+        this.imageHeight = img.naturalHeight;
+        if (keepCoordinates && this.lastCoordinates) {
+          this.coordinates = {
+            left: this.lastCoordinates.left,
+            top: this.lastCoordinates.top,
+            width: this.lastCoordinates.width,
+            height: this.lastCoordinates.height,
+          };
+        } else {
+          const cropW = Math.floor(img.naturalWidth / 2);
+          const cropH = cropW;
+          const cropL = Math.floor((img.naturalWidth - cropW) / 2);
+          const cropT = Math.floor((img.naturalHeight - cropH) / 2);
+          this.coordinates = {
+            left: cropL,
+            top: cropT,
+            width: cropW,
+            height: cropH,
+          };
+        }
+        resolve();
+      };
+      img.onerror = reject;
+      img.src = src;
+    });
   }
 
   /**
@@ -245,7 +249,7 @@ class CropperState {
           this.lastCoordinates = null;
         }
         this.image = this.images[this.activeImageIndex].url;
-        this.updateImageSize(this.image, !!this.lastCoordinates);
+        await this.updateImageSize(this.image, !!this.lastCoordinates);
         this.infoMessage = null;
       } catch (err) {
         this.errorMessage = 'Failed to read one or more files.';
@@ -258,7 +262,7 @@ class CropperState {
    * Sets the active image by index and updates coordinates.
    * @param {number} idx - Index of the image to activate
    */
-  setActiveImage(idx: number) {
+  async setActiveImage(idx: number) {
     if (idx >= 0 && idx < this.images.length) {
       if (this.image) {
         this.lastCoordinates = { ...this.coordinates };
@@ -266,8 +270,8 @@ class CropperState {
         this.lastCoordinates = null;
       }
       this.activeImageIndex = idx;
+      await this.updateImageSize(this.image, !!this.lastCoordinates);
       this.image = this.images[idx].url;
-      this.updateImageSize(this.image, !!this.lastCoordinates);
     }
   }
 
@@ -275,7 +279,7 @@ class CropperState {
    * Removes an image from the list by index and updates active image.
    * @param {number} idx - Index of the image to remove
    */
-  removeImage(idx: number) {
+  async removeImage(idx: number) {
     if (typeof idx !== 'number' || idx < 0 || idx >= this.images.length) return;
     this.images.splice(idx, 1);
     if (this.images.length === 0) {
@@ -287,7 +291,7 @@ class CropperState {
         const nextIdx = idx > 0 ? idx - 1 : 0;
         this.activeImageIndex = nextIdx;
         this.image = this.images[nextIdx].url;
-        this.updateImageSize(this.image, false);
+        await this.updateImageSize(this.image, false);
       } else if (this.activeImageIndex > idx) {
         this.activeImageIndex--;
       }
