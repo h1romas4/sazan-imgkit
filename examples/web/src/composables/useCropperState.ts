@@ -1,10 +1,16 @@
+import type { ImageGenerationService } from '../services/ImageGenerationService';
 import { reactive } from 'vue';
-import { generateCropGridImage } from '../services/CropGridService';
 
 /**
  * State and logic for image cropping and grid generation.
  */
 class CropperState {
+  /**
+   * The image generation strategy/service injected from the outside.
+   * @type {object|undefined}
+   */
+  strategy: ImageGenerationService | undefined = undefined;
+
   /**
    * The current error message, if any. This should be watched by the UI layer
    * and displayed using any notification method (e.g., toast, dialog).
@@ -303,9 +309,10 @@ class CropperState {
   }
 
   /**
-   * Generates the output grid image from cropped images using CropGridService and opens it in a new tab.
+   * Generates the output grid image using the injected strategy (service) and opens it in a new tab.
+   * @param {ImageGenerationService} [strategy] - Optional image generation strategy (must have generateImage)
    */
-  async generateImage() {
+  async generateImage(strategy?: ImageGenerationService) {
     if (this.images.length === 0) {
       this.errorMessage = 'No images available. Cannot generate grid image.';
       return;
@@ -313,7 +320,15 @@ class CropperState {
     this.errorMessage = null;
     this.isGenerating = true;
 
-    const result = await generateCropGridImage({
+    // Use injected strategy if provided, otherwise fallback to legacy import (for direct use)
+    const service: ImageGenerationService | undefined = strategy || this.strategy;
+    if (!service) {
+      this.errorMessage = 'No image generation strategy provided.';
+      this.isGenerating = false;
+      return;
+    }
+
+    const result = await service.generateImage({
       images: this.images,
       gridCols: this.gridCols,
       gridRows: this.gridRows,
@@ -329,9 +344,14 @@ class CropperState {
 }
 
 /**
- * Provides a reactive CropperState instance for use in Vue components.
+ * Factory for CropperState. Accepts an optional strategy/service for image generation.
+ * @param {ImageGenerationService} [strategy] - Optional image generation strategy (service)
  * @returns {CropperState}
  */
-export function useCropperState() {
-  return reactive(new CropperState());
+export function useCropperState(strategy?: ImageGenerationService) {
+  const state = reactive(new CropperState());
+  if (strategy) {
+    (state as any).strategy = strategy;
+  }
+  return state;
 }
