@@ -1,5 +1,5 @@
 import { reactive } from 'vue';
-import { cropAndGridImages } from '../utils/sazan-helper';
+import { generateCropGridImage } from '../services/CropGridService';
 
 /**
  * State and logic for image cropping and grid generation.
@@ -303,36 +303,7 @@ class CropperState {
   }
 
   /**
-   * Asynchronously creates and sets an OffscreenCanvas for the given image object if not already present.
-   * @param {object} imgObj - { name, url, canvas? }
-   * @returns {Promise<void>}
-   */
-  async ensureImageCanvas(imgObj: { name: string; url: string; canvas?: OffscreenCanvas }): Promise<void> {
-    if (imgObj.canvas) return;
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.src = imgObj.url;
-      img.onload = () => {
-        try {
-          const offscreenCanvas = new OffscreenCanvas(img.width, img.height);
-          const ctx = offscreenCanvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0);
-            imgObj.canvas = offscreenCanvas;
-            resolve();
-          } else {
-            reject(new Error('Failed to get 2d context'));
-          }
-        } catch (e) {
-          reject(e);
-        }
-      };
-      img.onerror = () => reject(new Error('Failed to load image: ' + imgObj.name));
-    });
-  }
-
-  /**
-   * Generates the output grid image from cropped images using sazan-wasm and opens it in a new tab.
+   * Generates the output grid image from cropped images using CropGridService and opens it in a new tab.
    */
   async generateImage() {
     if (this.images.length === 0) {
@@ -342,121 +313,18 @@ class CropperState {
     this.errorMessage = null;
     this.isGenerating = true;
 
-    // Await creation of OffscreenCanvas for all images
-    try {
-      await Promise.all(this.images.map(imgObj => this.ensureImageCanvas(imgObj)));
-    } catch (e: any) {
-      this.errorMessage = e?.message || 'Failed to load one or more images.';
-      this.isGenerating = false;
-      return;
-    }
-    // Use coordinates of the first image for generate
-    let coordinatesToUse: { left: number, top: number, width: number, height: number };
-    if (this.images.length > 0 && this.images[0].coordinates) {
-      coordinatesToUse = this.images[0].coordinates;
+    const result = await generateCropGridImage({
+      images: this.images,
+      gridCols: this.gridCols,
+      gridRows: this.gridRows,
+    });
+    if (result.ok && result.blobUrl) {
+      window.open(result.blobUrl, '_blank');
+      this.errorMessage = null;
     } else {
-      coordinatesToUse = { left: 0, top: 0, width: 100, height: 100 };
+      this.errorMessage = result.error || 'Failed to generate grid image.';
     }
-
-    // Collect RGBA data and determine the maximum image size
-    let maxWidth = 0, maxHeight = 0;
-    for (const imgObj of this.images) {
-      if (imgObj.canvas) {
-        maxWidth = Math.max(maxWidth, imgObj.canvas.width);
-        maxHeight = Math.max(maxHeight, imgObj.canvas.height);
-      }
-    }
-    const rgbaImages: Uint8ClampedArray[] = [];
-    for (const imgObj of this.images) {
-      if (!imgObj.canvas) {
-        this.errorMessage = `Failed to load image: ${imgObj.name}`;
-        this.isGenerating = false;
-        return;
-      }
-      const srcCanvas = imgObj.canvas;
-      // Use the existing canvas for images with the maximum size
-      if (srcCanvas.width === maxWidth && srcCanvas.height === maxHeight) {
-        const imageData = srcCanvas.getContext('2d')!.getImageData(0, 0, maxWidth, maxHeight);
-        rgbaImages.push(imageData.data);
-      } else {
-        // For other images, create a new OffscreenCanvas for resizing
-        const dstCanvas = new OffscreenCanvas(maxWidth, maxHeight);
-        const dstCtx = dstCanvas.getContext('2d');
-        if (!dstCtx) {
-          this.errorMessage = `Failed to create resize canvas for image: ${imgObj.name}`;
-          this.isGenerating = false;
-          return;
-        }
-        dstCtx.drawImage(srcCanvas, 0, 0);
-        const imageData = dstCtx.getImageData(0, 0, maxWidth, maxHeight);
-        rgbaImages.push(imageData.data);
-      }
-    }
-    const imageWidth = maxWidth;
-    const imageHeight = maxHeight;
-
-    try {
-      const gridCols = this.gridCols;
-      const gridRows = this.gridRows;
-      const cellWidth = coordinatesToUse.width;
-      const cellHeight = coordinatesToUse.height;
-      // Use the helper to generate the output RGBA
-      const outRgba = cropAndGridImages(
-        rgbaImages,
-        imageWidth,
-        imageHeight,
-        coordinatesToUse.left,
-        coordinatesToUse.top,
-        coordinatesToUse.width,
-        coordinatesToUse.height,
-        gridCols,
-        gridRows
-      );
-
-      // Create output OffscreenCanvas and put the RGBA data
-      const outCanvas = new OffscreenCanvas(gridCols * cellWidth, gridRows * cellHeight);
-      const outCtx = outCanvas.getContext('2d');
-      if (!outCtx) {
-        this.errorMessage = 'Failed to create output canvas.';
-        this.isGenerating = false;
-        return;
-      }
-      const outImageData = new ImageData(
-        new Uint8ClampedArray(outRgba),
-        outCanvas.width,
-        outCanvas.height
-      );
-      outCtx.putImageData(outImageData, 0, 0);
-      // Convert OffscreenCanvas to Blob and open in new tab
-      outCanvas.convertToBlob({ type: 'image/png' }).then(blob => {
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          window.open(url, '_blank');
-          this.isGenerating = false;
-          this.errorMessage = null;
-        } else {
-          this.errorMessage = 'Failed to create image Blob.';
-          this.isGenerating = false;
-          this.infoMessage = null;
-        }
-      }).catch(e => {
-        this.errorMessage = 'An error occurred while creating the image Blob.';
-        this.isGenerating = false;
-        this.infoMessage = null;
-      });
-    } catch (e) {
-      this.errorMessage = 'Failed to generate grid image using Wasm.';
-      this.isGenerating = false;
-      this.infoMessage = null;
-    }
-
-    // Release OffscreenCanvas references after generating the image to help free memory.
-    // This allows garbage collection to reclaim the memory used by the canvases.
-    for (const imgObj of this.images) {
-      // Remove the canvas property so it is no longer referenced.
-      // OffscreenCanvas does not have a close/dispose method, so this is sufficient.
-      imgObj.canvas = undefined;
-    }
+    this.isGenerating = false;
   }
 }
 
