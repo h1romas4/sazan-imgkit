@@ -2,6 +2,7 @@
 <script setup>
 import { ref } from 'vue';
 import CropGrid from './components/CropGrid.vue';
+import CropSplit from './components/CropSplit.vue';
 const activeTab = ref('cropgrid');
 </script>
 
@@ -14,6 +15,9 @@ const activeTab = ref('cropgrid');
 >
     <el-tab-pane label="Crop and Grid" name="cropgrid">
       <CropGrid />
+    </el-tab-pane>
+    <el-tab-pane label="Crop and Split" name="cropsplit">
+      <CropSplit />
     </el-tab-pane>
   </el-tabs>
 </template>

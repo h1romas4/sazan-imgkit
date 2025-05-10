@@ -3,11 +3,11 @@ import { ensureOffscreenCanvasForImages, releaseOffscreenCanvasForImages, normal
 import type { ImageGenerationService, ImageGenerationParams, ImageGenerationResult } from './ImageGenerationService';
 
 /**
- * CropGridService: Implements ImageGenerationService for grid image generation.
+ * CropSplitService: Implements ImageGenerationService for split image generation.
  */
-export const CropGridService: ImageGenerationService = {
+export const CropSplitService: ImageGenerationService = {
   /**
-   * Generates a grid image from an array of cropped images.
+   * Generates a split image from an array of cropped images.
    *
    * - Uses the crop coordinates of the first image for all crops.
    * - Normalizes all images to the maximum width/height among the inputs.
