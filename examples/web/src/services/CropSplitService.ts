@@ -1,5 +1,5 @@
 import { cropAndGridImages } from '../utils/sazan-helper';
-import { ensureOffscreenCanvasForImages, releaseOffscreenCanvasForImages, normalizeImagesToMaxSize } from '../utils/canvas-helper';
+import { ensureOffscreenCanvasForImages, releaseOffscreenCanvasForImages, normalizeImagesToMaxSize, canvasToPngBlob } from '../utils/canvas-helper';
 import type { ImageGenerationService, ImageGenerationParams, ImageGenerationResult } from './ImageGenerationService';
 
 /**
@@ -46,7 +46,7 @@ export const CropSplitService: ImageGenerationService = {
     try {
       const cellWidth = coordinatesToUse.width;
       const cellHeight = coordinatesToUse.height;
-      const outRgba = cropAndGridImages(
+      const gridRgba = cropAndGridImages(
         rgbaImages,
         imageWidth,
         imageHeight,
@@ -57,18 +57,11 @@ export const CropSplitService: ImageGenerationService = {
         gridCols,
         gridRows
       );
-      const outCanvas = new OffscreenCanvas(gridCols * cellWidth, gridRows * cellHeight);
-      const outCtx = outCanvas.getContext('2d');
-      if (!outCtx) {
-        return { ok: false, error: 'Failed to create output canvas.' };
-      }
-      const outImageData = new ImageData(
-        new Uint8ClampedArray(outRgba),
-        outCanvas.width,
-        outCanvas.height
-      );
-      outCtx.putImageData(outImageData, 0, 0);
-      const blob = await outCanvas.convertToBlob({ type: 'image/png' });
+      const blob = await canvasToPngBlob({
+        rgba: gridRgba,
+        width: gridCols * cellWidth,
+        height: gridRows * cellHeight
+      });
       if (!blob) return { ok: false, error: 'Failed to create image Blob.' };
       const url = URL.createObjectURL(blob);
       return { ok: true, blobUrl: url };

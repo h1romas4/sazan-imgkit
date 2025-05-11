@@ -1,4 +1,19 @@
 /**
+ * Create a PNG Blob from raw RGBA data and dimensions using OffscreenCanvas.
+ * @param opts Object with { rgba, width, height }
+ * @returns Promise<Blob | null>
+ */
+export async function canvasToPngBlob(opts: { rgba: Uint8Array<ArrayBufferLike>, width: number, height: number }): Promise<Blob | null> {
+  const { rgba, width, height } = opts;
+  const canvas = new OffscreenCanvas(width, height);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  const imageData = new ImageData(new Uint8ClampedArray(rgba), width, height);
+  ctx.putImageData(imageData, 0, 0);
+  return await canvas.convertToBlob({ type: 'image/png' });
+}
+
+/**
  * Normalize an array of images to the maximum width and height among them, returning RGBA arrays.
  * @param images Array of image objects (must have .canvas)
  * @returns { maxWidth: number, maxHeight: number, rgbaImages: Uint8ClampedArray[] }
